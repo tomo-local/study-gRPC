@@ -1,0 +1,23 @@
+# バイナリファイル
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Protocol Buffers 生成ファイル
+*.pb.go
+
+# Go モジュールキャッシュ
+go.sum
+
+# 一時ファイル
+*.tmp
+*.log
+
+# OS 固有のファイル
+.DS_Store
+Thumbs.db
+
+# IDE/エディタの設定ファイル
+.vscode/
+.idea/
