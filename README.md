@@ -1,22 +1,22 @@
-# gRPC 学習リポジトリ
+# gRPC Learning Repository
 
-このリポジトリは、以下のサイトで紹介されている gRPC の学習内容を実践するためのものです：
+This repository is for practicing the gRPC learning content introduced in the following article:
 
-[【gRPC入門】Protocol BuffersとgRPCを使ったAPI開発](https://note.com/shunex/n/nd8109a1144a5)
+[Introduction to gRPC: API Development with Protocol Buffers and gRPC](https://note.com/shunex/n/nd8109a1144a5)
 
-## 概要
+## Overview
 
-gRPC は Google が開発した高性能な RPC フレームワークで、Protocol Buffers（protobuf）を使用して効率的な通信を実現します。このリポジトリでは、以下の内容を学習・実践します：
+gRPC is a high-performance RPC framework developed by Google that uses Protocol Buffers (protobuf) for efficient communication. In this repository, you will learn and practice the following:
 
-- Protocol Buffers を使ったデータ定義
-- gRPC サーバーとクライアントの実装
-- gRPC を使った双方向ストリーミング通信
+- Defining data using Protocol Buffers
+- Implementing gRPC servers and clients
+- Using gRPC for bidirectional streaming communication
 
-## セットアップ
+## Setup
 
-1. 必要なツールをインストールします：
-   - `protoc`（Protocol Buffers コンパイラ）
-   - `protoc-gen-go` と `protoc-gen-go-grpc`（Go 用のコード生成プラグイン）
+1. Install the required tools:
+   - `protoc` (Protocol Buffers compiler)
+   - `protoc-gen-go` and `protoc-gen-go-grpc` (Code generation plugins for Go)
 
    ```bash
    brew install protobuf
@@ -25,37 +25,37 @@ gRPC は Google が開発した高性能な RPC フレームワークで、Proto
    export PATH="$PATH:$(go env GOPATH)/bin"
    ```
 
-2. プロジェクトの依存関係をインストールします：
+2. Install project dependencies:
 
    ```bash
    go mod tidy
    ```
 
-3. Protocol Buffers ファイルからコードを生成します：
+3. Generate code from Protocol Buffers files:
 
    ```bash
    protoc --go_out=. --go-grpc_out=. chat/chat.proto
    ```
 
-## 実行方法
+## How to Run
 
-1. gRPC サーバーを起動します：
+1. Start the gRPC server:
 
    ```bash
    go run server/main.go
    ```
 
-2. gRPC クライアントを実行します：
+2. Run the gRPC client:
 
    ```bash
    go run client/main.go
    ```
 
-## 参考リンク
+## References
 
-- [gRPC 公式ドキュメント](https://grpc.io/docs/)
-- [Protocol Buffers 公式ドキュメント](https://protobuf.dev/)
+- [gRPC Official Documentation](https://grpc.io/docs/)
+- [Protocol Buffers Official Documentation](https://protobuf.dev/)
 
 ---
 
-このリポジトリを通じて、gRPC の基礎から応用までしっかり学んでいこう！💪✨
+Let's dive into gRPC and master it from basics to advanced! 🚀✨
