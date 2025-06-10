@@ -1,47 +1,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	hellopb "myGrpc/src/pkg/grpc"
+	"myGrpc/src/service"
 )
 
-type myServer struct {
-	hellopb.UnimplementedGreetingServiceServer
-}
-
-func (s *myServer) Hello(ctx context.Context, req *hellopb.HelloRequest) (*hellopb.HelloResponse, error) {
-	// リクエストからnameフィールドを取り出して
-	// "Hello, [名前]!"というレスポンスを返す
-	return &hellopb.HelloResponse{
-		Message: fmt.Sprintf("Hello, %s!", req.GetName()),
-	}, nil
-}
-
-func (s *myServer) HelloServerStream(req *hellopb.HelloRequest, stream hellopb.GreetingService_HelloServerStreamServer) error {
-	resCount := 5
-	for i := 0; i < resCount; i++ {
-		if err := stream.Send(&hellopb.HelloResponse{
-			Message: fmt.Sprintf("[%d] Hello, %s!", i, req.GetName()),
-		}); err != nil {
-			return err
-		}
-		time.Sleep(time.Second * 1)
-	}
-	return nil
-}
-
-func NewMyServer() *myServer {
-	return &myServer{}
+func NewHelloService() *service.HelloService {
+	return &service.HelloService{}
 }
 
 func main() {
@@ -56,7 +30,7 @@ func main() {
 	s := grpc.NewServer()
 
 	// 2-1. 作成したgRPCサーバーに、サービスを登録する
-	hellopb.RegisterGreetingServiceServer(s, NewMyServer())
+	hellopb.RegisterGreetingServiceServer(s, NewHelloService())
 
 	// 2-2. gRPCサーバーに、Reflectionを登録する
 	reflection.Register(s)
