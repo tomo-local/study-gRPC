@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	hellopb "myGrpc/src/pkg/grpc"
+	hellopb "greeting/grpc"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

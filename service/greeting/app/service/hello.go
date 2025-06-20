@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	hellopb "myGrpc/src/pkg/grpc"
+	hellopb "greeting/grpc"
 )
 
 type HelloService struct {

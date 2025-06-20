@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	hellopb "myGrpc/src/pkg/grpc"
-	"myGrpc/src/service"
+	hellopb "greeting/grpc"
+	"greeting/service"
 )
 
 func NewHelloService() *service.HelloService {

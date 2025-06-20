@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	hellopb "myGrpc/src/pkg/grpc"
+	hellopb "greeting/grpc"
 )
 
 func (s *HelloService) HelloServerStream(req *hellopb.HelloRequest, stream hellopb.GreetingService_HelloServerStreamServer) error {

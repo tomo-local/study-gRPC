@@ -1,4 +1,4 @@
-module myGrpc
+module greeting
 
 go 1.24.1
 
