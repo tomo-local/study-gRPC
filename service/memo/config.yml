@@ -1,0 +1,11 @@
+version: 1.0
+name: Memo Service
+description: A service for managing memos
+author: togashi tomohiro
+
+settings:
+  PORT: 8080
+  ENV: development
+  FOLDER_PATH: ./tmp
+
+

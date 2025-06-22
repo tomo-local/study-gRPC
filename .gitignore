@@ -23,3 +23,9 @@ Thumbs.db
 # IDE/エディタの設定ファイル
 .vscode/
 .idea/
+
+# 作成したMemoのファイルのフォルダ
+service/memo/app/tmp/
+
+# debugファイル
+__debug_bin*

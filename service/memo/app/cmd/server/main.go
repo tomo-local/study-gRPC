@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 
+	config "memo/config/server"
 	pb "memo/grpc"
 	"memo/service"
 
@@ -15,7 +16,13 @@ import (
 )
 
 func main() {
-	port := 8080
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	port := cfg.Port
+
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		panic(err)
@@ -23,7 +30,7 @@ func main() {
 
 	s := grpc.NewServer()
 
-	pb.RegisterMemoServiceServer(s, service.NewMemoService())
+	pb.RegisterMemoServiceServer(s, service.NewMemoService(cfg))
 
 	reflection.Register(s)
 
