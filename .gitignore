@@ -26,3 +26,6 @@ Thumbs.db
 
 # 作成したMemoのファイルのフォルダ
 service/memo/app/memo/tmp/*
+
+# debugファイル
+__debug_bin*
