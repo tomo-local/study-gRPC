@@ -13,7 +13,7 @@ import (
 func (s *MemoService) CreateMemo(ctx context.Context, req *grpcPkg.CreateMemoRequest) (*grpcPkg.CreateMemoResponse, error) {
 	// ID生成
 	id := uuid.New().String()
-	fileType := model.FileTypeTxt // デフォルトはtxt。拡張したい場合はリクエストに追加してね！
+	fileType := model.FileTypeMd
 	now := timePkg.Now().AsTime()
 
 	memo := &model.Memo{
