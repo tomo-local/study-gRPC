@@ -15,7 +15,7 @@ func generateMarkdownContent(memo *model.Memo) string {
 		--------------------------------
 		内容
 	*/
-	return fmt.Sprintf("# %s\n\n- CreatedAt: %s\n- UpdatedAt: %s\n\n%s\n\n", memo.Title, memo.CreatedAt, memo.UpdatedAt, memo.Content)
+	return fmt.Sprintf("## %s\n\n- CreatedAt: %s\n- UpdatedAt: %s\n\n--------------------------------\n%s\n\n", memo.Title, memo.CreatedAt, memo.UpdatedAt, memo.Content)
 }
 
 func generateJsonContent(memo *model.Memo) string {
