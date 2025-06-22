@@ -30,7 +30,7 @@ func main() {
 
 	s := grpc.NewServer()
 
-	pb.RegisterMemoServiceServer(s, service.NewMemoService())
+	pb.RegisterMemoServiceServer(s, service.NewMemoService(cfg))
 
 	reflection.Register(s)
 
