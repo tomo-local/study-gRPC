@@ -9,6 +9,8 @@
 
 # Go モジュールキャッシュ
 go.sum
+go.work
+go.work.sum
 
 # 一時ファイル
 *.tmp

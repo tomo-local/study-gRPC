@@ -1,0 +1,68 @@
+
+syntax = "proto3";
+
+option go_package = "app/grpc";
+
+import "google/protobuf/timestamp.proto";
+
+package memo;
+
+service MemoService {
+  rpc CreateMemo (CreateMemoRequest) returns (CreateMemoResponse);
+  rpc GetMemo  (GetMemoRequest) returns (GetMemoResponse);
+  rpc GetMultiMemos (stream GetMultiMemoRequest) returns (stream GetMultiMemoResponse);
+  rpc ListMemos (ListMemosRequest) returns (stream Memo);
+  rpc UpdateMemo (UpdateMemoRequest) returns (UpdateMemoResponse);
+}
+
+message Memo {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message CreateMemoRequest {
+  string title = 1;
+  string content = 2;
+}
+
+message CreateMemoResponse {
+  Memo memo = 1;
+}
+
+message GetMemoRequest {
+  string id = 1;
+}
+
+message GetMemoResponse {
+  Memo memo = 1;
+}
+
+message GetMultiMemoRequest {
+  repeated string memo_ids = 1;
+}
+message GetMultiMemoResponse {
+  Memo memo = 1;
+}
+
+message ListMemosRequest {
+  optional google.protobuf.Timestamp start_time = 1;
+  optional google.protobuf.Timestamp end_time = 2;
+}
+
+message ListMemosResponse {
+  repeated Memo memos = 1;
+}
+
+message UpdateMemoRequest {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+
+}
+
+message UpdateMemoResponse {
+  Memo memo = 1;
+}
