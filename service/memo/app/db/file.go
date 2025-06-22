@@ -35,7 +35,15 @@ func (f *fileService) CreateFile(memo *model.Memo) (*model.Memo, error) {
 	}
 	filename := fmt.Sprintf("%s_%s.%s", memo.ID, memo.Title, memo.FileType)
 	filePath := filepath.Join(f.folderPath, filename)
-	content := fmt.Sprintf("Title: %s\nContent: %s\nCreatedAt: %s\nUpdatedAt: %s\n", memo.Title, memo.Content, memo.CreatedAt, memo.UpdatedAt)
+	var content string
+	switch memo.FileType {
+	case model.FileTypeMd:
+		content = generateMarkdownContent(memo)
+	case model.FileTypeJson:
+		content = generateJsonContent(memo)
+	default:
+		content = generateTextContent(memo)
+	}
 
 	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
 		return nil, fmt.Errorf("failed to write file: %w", err)
