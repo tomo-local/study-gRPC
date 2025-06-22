@@ -3,9 +3,11 @@ module memo
 go 1.24.1
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/spf13/viper v1.20.1
 	google.golang.org/grpc v1.73.0
 	google.golang.org/protobuf v1.36.6
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
