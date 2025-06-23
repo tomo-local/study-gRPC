@@ -34,18 +34,26 @@ func getFileTimestamps(filePath string) (FileTimestamps, error) {
 	}, nil
 }
 
-func changeFileType(fileName string) model.FileType {
+type FileName struct {
+	ID       string
+	FileType model.FileType
+	Title    string
+}
+
+func formatFileName(fileName string) FileName {
 	ext := filepath.Ext(fileName)
 	fileType := model.FileType(strings.TrimPrefix(ext, "."))
 
-	return fileType
-}
+	fileNameWithoutExt := strings.TrimSuffix(fileName, ext)
 
-func getTitle(fileName string) string {
-	baseName := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-	title := strings.Split(baseName, "_")[0]
+	title := strings.Split(fileNameWithoutExt, "_")[0]
+	id := strings.Split(fileNameWithoutExt, "_")[1]
 
-	return title
+	return FileName{
+		ID:       id,
+		FileType: fileType,
+		Title:    title,
+	}
 }
 
 func generateContent(fileType model.FileType, content string) string {
