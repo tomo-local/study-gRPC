@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"memo/db/model"
 	grpcPkg "memo/grpc"
-	"time"
 
 	timePkg "google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -19,31 +18,22 @@ func (s *MemoService) UpdateMemo(ctx context.Context, req *grpcPkg.UpdateMemoReq
 	now := timePkg.Now().AsTime()
 
 	updateMemo := &model.Memo{
-		ID:        originMemo.ID,
-		Title:     req.Title,
-		Content:   req.Content,
-		CreatedAt: originMemo.CreatedAt,
-		UpdatedAt: now.Format("2006-01-02T15:04:05Z07:00"),
+		ID:         originMemo.ID,
+		Title:      req.Title,
+		Content:    req.Content,
+		ModifiedAt: now,
 	}
 
 	if _, err := s.FileService.UpdateFile(updateMemo); err != nil {
 		return nil, fmt.Errorf("failed to update memo %w", err)
 	}
 
-	// Parse memo.CreatedAt from string to time.Time
-	createdAt, err := time.Parse("2006-01-02T15:04 :05Z07:00", originMemo.CreatedAt)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse CreatedAt: %w", err)
-	}
-
 	return &grpcPkg.UpdateMemoResponse{
 		Memo: &grpcPkg.Memo{
-			Id:        updateMemo.ID,
-			Title:     updateMemo.Title,
-			Content:   updateMemo.Content,
-			CreatedAt: timePkg.New(createdAt),
-			UpdatedAt: timePkg.New(now),
+			Id:         updateMemo.ID,
+			Title:      updateMemo.Title,
+			Content:    updateMemo.Content,
+			ModifiedAt: timePkg.New(now),
 		},
 	}, nil
 }

@@ -59,34 +59,35 @@ func (f *fileService) GetFile(id string) (*model.Memo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
+	// フォルダのファイルの一覧を取得して正規表現でマッチングしているファイル名を検索する
 	for _, entry := range dirEntries {
-		if !entry.IsDir() && strings.HasPrefix(entry.Name(), id+"_") {
+		if !entry.IsDir() && strings.Contains(entry.Name(), id) {
 			filePath := filepath.Join(f.folderPath, entry.Name())
 			content, err := os.ReadFile(filePath)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+				return nil, fmt.Errorf("failed to read file: %w", err)
+			}
+
+			ext := filepath.Ext(entry.Name())
+			fileType := model.FileType(strings.TrimPrefix(ext, "."))
+
+			// ここでファイルの作成時間と最終更新時間を取得したいです。
+			fileInfo, err := entry.Info()
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file info: %w", err)
 			}
 
 			memo := &model.Memo{
-				ID:       id,
-				FileType: model.FileType(strings.TrimSuffix(filepath.Ext(entry.Name()), ".")),
-				Content:  string(content),
+				ID:         id,
+				FileType:   fileType,
+				Content:    string(content),
+				ModifiedAt: fileInfo.ModTime(),
 			}
-			// Extract title and timestamps from the content
-			// This is a simplified example; actual parsing logic may vary
-			lines := strings.Split(string(content), "\n")
-			if len(lines) > 0 {
-				memo.Title = strings.TrimPrefix(lines[0], "Title: ")
-			}
-			if len(lines) > 1 {
-				memo.CreatedAt = strings.TrimPrefix(lines[1], "CreatedAt: ")
-			}
-			if len(lines) > 2 {
-				memo.UpdatedAt = strings.TrimPrefix(lines[2], "UpdatedAt: ")
-			}
+
 			return memo, nil
 		}
 	}
+
 	return nil, fmt.Errorf("file with id %s not found", id)
 }
 
@@ -112,22 +113,23 @@ func (f *fileService) ListFiles(maxResults int64) ([]*model.Memo, error) {
 				return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
 			}
 
+			fileInfo, err := entry.Info()
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file info: %w", err)
+			}
+
+			ext := filepath.Ext(entry.Name())
+			fileType := model.FileType(strings.TrimPrefix(ext, "."))
+			modifiedAt := fileInfo.ModTime()
+
 			memo := &model.Memo{
-				ID:       strings.Split(entry.Name(), "_")[1],
-				FileType: model.FileType(strings.TrimSuffix(filepath.Ext(entry.Name()), ".")),
-				Content:  string(content),
+				ID:         strings.Split(entry.Name(), "_")[1],
+				FileType:   fileType,
+				Content:    string(content),
+				ModifiedAt: modifiedAt,
 			}
 			// Extract title and timestamps from the content
-			lines := strings.Split(string(content), "\n")
-			if len(lines) > 0 {
-				memo.Title = strings.TrimPrefix(lines[0], "Title: ")
-			}
-			if len(lines) > 1 {
-				memo.CreatedAt = strings.TrimPrefix(lines[1], "CreatedAt: ")
-			}
-			if len(lines) > 2 {
-				memo.UpdatedAt = strings.TrimPrefix(lines[2], "UpdatedAt: ")
-			}
+
 			memos = append(memos, memo)
 		}
 	}

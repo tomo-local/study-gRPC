@@ -17,12 +17,11 @@ func (s *MemoService) CreateMemo(ctx context.Context, req *grpcPkg.CreateMemoReq
 	now := timePkg.Now().AsTime()
 
 	memo := &model.Memo{
-		ID:        id,
-		FileType:  fileType,
-		Title:     req.Title,
-		Content:   req.Content,
-		CreatedAt: now.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt: now.Format("2006-01-02T15:04:05Z07:00"),
+		ID:         id,
+		FileType:   fileType,
+		Title:      req.Title,
+		Content:    req.Content,
+		ModifiedAt: now,
 	}
 
 	if _, err := s.FileService.CreateFile(memo); err != nil {
@@ -31,11 +30,10 @@ func (s *MemoService) CreateMemo(ctx context.Context, req *grpcPkg.CreateMemoReq
 
 	return &grpcPkg.CreateMemoResponse{
 		Memo: &grpcPkg.Memo{
-			Id:        memo.ID,
-			Title:     memo.Title,
-			Content:   memo.Content,
-			CreatedAt: timePkg.New(now),
-			UpdatedAt: timePkg.New(now),
+			Id:         memo.ID,
+			Title:      memo.Title,
+			Content:    memo.Content,
+			ModifiedAt: timePkg.New(now),
 		},
 	}, nil
 }

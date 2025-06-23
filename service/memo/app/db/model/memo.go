@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type FileType string
 
 const (
@@ -9,10 +11,9 @@ const (
 )
 
 type Memo struct {
-	ID        string   `json:"id"`
-	FileType  FileType `json:"file_type"`
-	Title     string   `json:"title"`
-	Content   string   `json:"content"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
+	ID         string    `json:"id"`
+	FileType   FileType  `json:"file_type"`
+	Title      string    `json:"title"`
+	Content    string    `json:"content"`
+	ModifiedAt time.Time `json:"modified_at"`
 }
