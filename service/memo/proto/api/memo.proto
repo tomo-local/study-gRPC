@@ -20,8 +20,7 @@ message Memo {
   string id = 1;
   string title = 2;
   string content = 3;
-  google.protobuf.Timestamp created_at = 4;
-  google.protobuf.Timestamp updated_at = 5;
+  google.protobuf.Timestamp modified_at = 4;
 }
 
 message CreateMemoRequest {
