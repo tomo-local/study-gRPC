@@ -4,41 +4,65 @@ import (
 	"encoding/json"
 	"fmt"
 	"memo/db/model"
+	"os"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
 )
 
-func generateMarkdownContent(memo *model.Memo) string {
-	/*
-		Sample
-		# タイトル
-		- ModifiedAt: 更新日時
-		--------------------------------
-		内容
-	*/
-	return fmt.Sprintf("## %s\n\n- ModifiedAt: %s\n\n--------------------------------\n%s\n\n", memo.Title, memo.ModifiedAt, memo.Content)
+type FileTimestamps struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-func generateJsonContent(memo *model.Memo) string {
-	/*
-		Sample
-		{
-			"title": "タイトル",
-			"content": "内容",
-			"modified_at": "更新日時"
-		}
-	*/
-	json, err := json.Marshal(memo)
+func getFileTimestamps(filePath string) (FileTimestamps, error) {
+	stat, err := os.Stat(filePath)
 	if err != nil {
-		return "{}"
+		return FileTimestamps{}, err
 	}
-	return string(json)
+
+	sys := stat.Sys()
+	statT, ok := sys.(*syscall.Stat_t)
+	if !ok {
+		return FileTimestamps{}, fmt.Errorf("failed to cast to *syscall.Stat_t")
+	}
+
+	return FileTimestamps{
+		CreatedAt: time.Unix(statT.Birthtimespec.Sec, statT.Birthtimespec.Nsec),
+		UpdatedAt: time.Unix(statT.Mtimespec.Sec, statT.Mtimespec.Nsec),
+	}, nil
 }
 
-func generateTextContent(memo *model.Memo) string {
-	/*　Sample
-	Title: タイトル
-	ModifiedAt: 更新日時
-	--------------------------------
-	内容
-	*/
-	return fmt.Sprintf("Title: %s\nModifiedAt: %s\n--------------------------------\n%s", memo.Title, memo.ModifiedAt, memo.Content)
+func changeFileType(fileName string) model.FileType {
+	ext := filepath.Ext(fileName)
+	fileType := model.FileType(strings.TrimPrefix(ext, "."))
+
+	return fileType
+}
+
+func getTitle(fileName string) string {
+	baseName := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+	title := strings.Split(baseName, "_")[0]
+
+	return title
+}
+
+func generateContent(fileType model.FileType, content string) string {
+	switch fileType {
+	case model.FileTypeJson:
+		return checkJsonContent(content)
+	default:
+		return content
+	}
+}
+
+func checkJsonContent(content string) string {
+	var jsonContent map[string]interface{}
+	err := json.Unmarshal([]byte(content), &jsonContent)
+	if err != nil {
+		return content
+	}
+
+	return jsonContent["content"].(string)
 }
