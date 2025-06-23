@@ -13,6 +13,8 @@ import (
 // FileService defines the interface for file-based memo operations.
 type FileService interface {
 	CreateFile(memo *model.Memo) (*model.Memo, error)
+	GetFile(id string) (*model.Memo, error)
+	ListFiles(maxResults int64) ([]*model.Memo, error)
 	UpdateFile(memo *model.Memo) (*model.Memo, error)
 	DeleteFile(id string) error
 }
@@ -49,6 +51,87 @@ func (f *fileService) CreateFile(memo *model.Memo) (*model.Memo, error) {
 		return nil, fmt.Errorf("failed to write file: %w", err)
 	}
 	return memo, nil
+}
+
+// GetFile retrieves a memo file by its ID.
+func (f *fileService) GetFile(id string) (*model.Memo, error) {
+	dirEntries, err := os.ReadDir(f.folderPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+	for _, entry := range dirEntries {
+		if !entry.IsDir() && strings.HasPrefix(entry.Name(), id+"_") {
+			filePath := filepath.Join(f.folderPath, entry.Name())
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+			}
+
+			memo := &model.Memo{
+				ID:       id,
+				FileType: model.FileType(strings.TrimSuffix(filepath.Ext(entry.Name()), ".")),
+				Content:  string(content),
+			}
+			// Extract title and timestamps from the content
+			// This is a simplified example; actual parsing logic may vary
+			lines := strings.Split(string(content), "\n")
+			if len(lines) > 0 {
+				memo.Title = strings.TrimPrefix(lines[0], "Title: ")
+			}
+			if len(lines) > 1 {
+				memo.CreatedAt = strings.TrimPrefix(lines[1], "CreatedAt: ")
+			}
+			if len(lines) > 2 {
+				memo.UpdatedAt = strings.TrimPrefix(lines[2], "UpdatedAt: ")
+			}
+			return memo, nil
+		}
+	}
+	return nil, fmt.Errorf("file with id %s not found", id)
+}
+
+// ValidPath checks if the provided path is valid.
+func (f *fileService) ListFiles(maxResults int64) ([]*model.Memo, error) {
+	dirEntries, err := os.ReadDir(f.folderPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	var memos []*model.Memo
+	// If maxResults is less than or equal to 0, return all files
+	if maxResults > 0 && int64(len(dirEntries)) > maxResults {
+		dirEntries = dirEntries[:maxResults]
+	}
+
+	// Iterate through directory entries and filter valid memo files
+	for _, entry := range dirEntries {
+		if !entry.IsDir() && strings.Contains(entry.Name(), "_") {
+			filePath := filepath.Join(f.folderPath, entry.Name())
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+			}
+
+			memo := &model.Memo{
+				ID:       strings.Split(entry.Name(), "_")[1],
+				FileType: model.FileType(strings.TrimSuffix(filepath.Ext(entry.Name()), ".")),
+				Content:  string(content),
+			}
+			// Extract title and timestamps from the content
+			lines := strings.Split(string(content), "\n")
+			if len(lines) > 0 {
+				memo.Title = strings.TrimPrefix(lines[0], "Title: ")
+			}
+			if len(lines) > 1 {
+				memo.CreatedAt = strings.TrimPrefix(lines[1], "CreatedAt: ")
+			}
+			if len(lines) > 2 {
+				memo.UpdatedAt = strings.TrimPrefix(lines[2], "UpdatedAt: ")
+			}
+			memos = append(memos, memo)
+		}
+	}
+	return memos, nil
 }
 
 // UpdateFile updates the file for the given memo.
