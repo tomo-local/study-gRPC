@@ -33,7 +33,7 @@ func (f *fileService) CreateFile(memo *model.Memo) (*model.Memo, error) {
 	if err := os.MkdirAll(f.folderPath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %w", err)
 	}
-	filename := fmt.Sprintf("%s_%s.%s", memo.ID, memo.Title, memo.FileType)
+	filename := fmt.Sprintf("%s_%s.%s", memo.Title, memo.ID, memo.FileType)
 	filePath := filepath.Join(f.folderPath, filename)
 	var content string
 	switch memo.FileType {
