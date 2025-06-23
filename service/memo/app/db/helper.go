@@ -4,44 +4,73 @@ import (
 	"encoding/json"
 	"fmt"
 	"memo/db/model"
+	"os"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
 )
 
-func generateMarkdownContent(memo *model.Memo) string {
-	/*
-		Sample
-		# タイトル
-		- CreatedAt: 作成日時
-		- UpdatedAt: 更新日時
-		--------------------------------
-		内容
-	*/
-	return fmt.Sprintf("## %s\n\n- CreatedAt: %s\n- UpdatedAt: %s\n\n--------------------------------\n%s\n\n", memo.Title, memo.CreatedAt, memo.UpdatedAt, memo.Content)
+type FileTimestamps struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-func generateJsonContent(memo *model.Memo) string {
-	/*
-		Sample
-		{
-			"title": "タイトル",
-			"content": "内容",
-			"createdAt": "作成日時",
-			"updatedAt": "更新日時"
-		}
-	*/
-	json, err := json.Marshal(memo)
+func getFileTimestamps(filePath string) (FileTimestamps, error) {
+	stat, err := os.Stat(filePath)
 	if err != nil {
-		return "{}"
+		return FileTimestamps{}, err
 	}
-	return string(json)
+
+	sys := stat.Sys()
+	statT, ok := sys.(*syscall.Stat_t)
+	if !ok {
+		return FileTimestamps{}, fmt.Errorf("failed to cast to *syscall.Stat_t")
+	}
+
+	return FileTimestamps{
+		CreatedAt: time.Unix(statT.Birthtimespec.Sec, statT.Birthtimespec.Nsec),
+		UpdatedAt: time.Unix(statT.Mtimespec.Sec, statT.Mtimespec.Nsec),
+	}, nil
 }
 
-func generateTextContent(memo *model.Memo) string {
-	/*　Sample
-	Title: タイトル
-	CreatedAt: 作成日時
-	UpdatedAt: 更新日時
-	--------------------------------
-	内容
-	*/
-	return fmt.Sprintf("Title: %s\nCreatedAt: %s\nUpdatedAt: %s\n--------------------------------\n%s", memo.Title, memo.CreatedAt, memo.UpdatedAt, memo.Content)
+type FileName struct {
+	ID       string
+	FileType model.FileType
+	Title    string
+}
+
+func formatFileName(fileName string) FileName {
+	ext := filepath.Ext(fileName)
+	fileType := model.FileType(strings.TrimPrefix(ext, "."))
+
+	fileNameWithoutExt := strings.TrimSuffix(fileName, ext)
+
+	title := strings.Split(fileNameWithoutExt, "_")[0]
+	id := strings.Split(fileNameWithoutExt, "_")[1]
+
+	return FileName{
+		ID:       id,
+		FileType: fileType,
+		Title:    title,
+	}
+}
+
+func generateContent(fileType model.FileType, content string) string {
+	switch fileType {
+	case model.FileTypeJson:
+		return checkJsonContent(content)
+	default:
+		return content
+	}
+}
+
+func checkJsonContent(content string) string {
+	var jsonContent map[string]interface{}
+	err := json.Unmarshal([]byte(content), &jsonContent)
+	if err != nil {
+		return content
+	}
+
+	return jsonContent["content"].(string)
 }

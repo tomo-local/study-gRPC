@@ -3,7 +3,6 @@ package db
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	config "memo/config/server"
@@ -13,8 +12,9 @@ import (
 // FileService defines the interface for file-based memo operations.
 type FileService interface {
 	CreateFile(memo *model.Memo) (*model.Memo, error)
+	GetFile(id string) (*model.Memo, error)
 	UpdateFile(memo *model.Memo) (*model.Memo, error)
-	DeleteFile(id string) error
+	ListFiles() ([]*model.Memo, error)
 }
 
 type fileService struct {
@@ -33,47 +33,154 @@ func (f *fileService) CreateFile(memo *model.Memo) (*model.Memo, error) {
 	if err := os.MkdirAll(f.folderPath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %w", err)
 	}
-	filename := fmt.Sprintf("%s_%s.%s", memo.ID, memo.Title, memo.FileType)
-	filePath := filepath.Join(f.folderPath, filename)
-	var content string
-	switch memo.FileType {
-	case model.FileTypeMd:
-		content = generateMarkdownContent(memo)
-	case model.FileTypeJson:
-		content = generateJsonContent(memo)
-	default:
-		content = generateTextContent(memo)
-	}
+
+	filePath := memo.GetFilePath(f.folderPath)
+	content := generateContent(memo.FileType, memo.Content)
 
 	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
 		return nil, fmt.Errorf("failed to write file: %w", err)
 	}
-	return memo, nil
+
+	timestamps, err := getFileTimestamps(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file timestamps: %w", err)
+	}
+
+	return &model.Memo{
+		ID:        memo.ID,
+		Title:     memo.Title,
+		FileType:  memo.FileType,
+		Content:   content,
+		CreatedAt: timestamps.CreatedAt,
+		UpdatedAt: timestamps.UpdatedAt,
+	}, nil
+}
+
+// GetFile retrieves a memo file by its ID.
+func (f *fileService) GetFile(id string) (*model.Memo, error) {
+	dirEntries, err := os.ReadDir(f.folderPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, entry := range dirEntries {
+		if !entry.IsDir() && strings.Contains(entry.Name(), id) {
+			fileName := formatFileName(entry.Name())
+			memo := &model.Memo{
+				ID:       id,
+				FileType: fileName.FileType,
+				Title:    fileName.Title,
+			}
+
+			filePath := memo.GetFilePath(f.folderPath)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file: %w", err)
+			}
+
+			generatedContent := generateContent(fileName.FileType, string(content))
+			timestamps, err := getFileTimestamps(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get file timestamps: %w", err)
+			}
+
+			return &model.Memo{
+				ID:        id,
+				Title:     fileName.Title,
+				FileType:  fileName.FileType,
+				Content:   generatedContent,
+				CreatedAt: timestamps.CreatedAt,
+				UpdatedAt: timestamps.UpdatedAt,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("file with id %s not found", id)
 }
 
 // UpdateFile updates the file for the given memo.
 // It currently reuses CreateFile, which overwrites the existing file.
-func (f *fileService) UpdateFile(memo *model.Memo) (*model.Memo, error) {
-	return f.CreateFile(memo)
-}
-
-// DeleteFile deletes a memo file by its ID.
-func (f *fileService) DeleteFile(id string) error {
+func (f *fileService) UpdateFile(targetMemo *model.Memo) (*model.Memo, error) {
 	dirEntries, err := os.ReadDir(f.folderPath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("file with id %s not found (directory does not exist)", id)
-		}
-		return fmt.Errorf("failed to read directory: %w", err)
+		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
+
 	for _, entry := range dirEntries {
-		if !entry.IsDir() && strings.HasPrefix(entry.Name(), id+"_") {
-			filePath := filepath.Join(f.folderPath, entry.Name())
-			if err := os.Remove(filePath); err != nil {
-				return fmt.Errorf("failed to remove file %s: %w", filePath, err)
+		if !entry.IsDir() && strings.Contains(entry.Name(), targetMemo.ID) {
+			fileName := formatFileName(entry.Name())
+			content := generateContent(fileName.FileType, targetMemo.Content)
+
+			if content == "" {
+				return nil, fmt.Errorf("content is empty")
 			}
-			return nil
+
+			updatedMemo := &model.Memo{
+				ID:       targetMemo.ID,
+				FileType: fileName.FileType,
+				Title:    fileName.Title,
+				Content:  content,
+			}
+
+			filePath := updatedMemo.GetFilePath(f.folderPath)
+
+			if err := os.WriteFile(filePath, []byte(updatedMemo.Content), 0644); err != nil {
+				return nil, fmt.Errorf("failed to write file: %w", err)
+			}
+
+			timestamps, err := getFileTimestamps(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get file timestamps: %w", err)
+			}
+
+			return &model.Memo{
+				ID:        updatedMemo.ID,
+				Title:     fileName.Title,
+				FileType:  fileName.FileType,
+				Content:   content,
+				CreatedAt: timestamps.CreatedAt,
+				UpdatedAt: timestamps.UpdatedAt,
+			}, nil
 		}
 	}
-	return fmt.Errorf("file with id %s not found", id)
+
+	return nil, fmt.Errorf("file with id %s not found", targetMemo.ID)
+}
+
+// ListFiles lists all memo files in the folder.
+func (f *fileService) ListFiles() ([]*model.Memo, error) {
+	dirEntries, err := os.ReadDir(f.folderPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	files := make([]*model.Memo, 0, len(dirEntries))
+	for _, entry := range dirEntries {
+		if !entry.IsDir() {
+			fileName := formatFileName(entry.Name())
+
+			memo := &model.Memo{
+				ID:       fileName.ID,
+				FileType: fileName.FileType,
+				Title:    fileName.Title,
+			}
+
+			filePath := memo.GetFilePath(f.folderPath)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file: %w", err)
+			}
+
+			generatedContent := generateContent(fileName.FileType, string(content))
+
+			files = append(files, &model.Memo{
+				ID:       fileName.ID,
+				Title:    fileName.Title,
+				FileType: fileName.FileType,
+				Content:  generatedContent,
+			})
+		}
+	}
+
+	return files, nil
 }
