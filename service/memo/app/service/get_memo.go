@@ -16,10 +16,11 @@ func (s *MemoService) GetMemo(ctx context.Context, req *grpcPkg.GetMemoRequest) 
 
 	return &grpcPkg.GetMemoResponse{
 		Memo: &grpcPkg.Memo{
-			Id:         memo.ID,
-			Title:      memo.Title,
-			Content:    memo.Content,
-			ModifiedAt: timePkg.New(memo.ModifiedAt),
+			Id:        memo.ID,
+			Title:     memo.Title,
+			Content:   memo.Content,
+			CreatedAt: timePkg.New(memo.CreatedAt),
+			UpdatedAt: timePkg.New(memo.UpdatedAt),
 		},
 	}, nil
 

@@ -15,25 +15,25 @@ func (s *MemoService) UpdateMemo(ctx context.Context, req *grpcPkg.UpdateMemoReq
 		return nil, fmt.Errorf("failed to get memo %w", err)
 	}
 
-	now := timePkg.Now().AsTime()
-
 	updateMemo := &model.Memo{
-		ID:         originMemo.ID,
-		Title:      req.Title,
-		Content:    req.Content,
-		ModifiedAt: now,
+		ID:       originMemo.ID,
+		FileType: originMemo.FileType,
+		Title:    originMemo.Title,
+		Content:  req.Content,
 	}
 
-	if _, err := s.FileService.UpdateFile(updateMemo); err != nil {
-		return nil, fmt.Errorf("failed to update memo %w", err)
+	updatedMemo, err := s.FileService.UpdateFile(updateMemo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update file: %w", err)
 	}
 
 	return &grpcPkg.UpdateMemoResponse{
 		Memo: &grpcPkg.Memo{
-			Id:         updateMemo.ID,
-			Title:      updateMemo.Title,
-			Content:    updateMemo.Content,
-			ModifiedAt: timePkg.New(now),
+			Id:        updatedMemo.ID,
+			Title:     updatedMemo.Title,
+			Content:   updatedMemo.Content,
+			CreatedAt: timePkg.New(updatedMemo.CreatedAt),
+			UpdatedAt: timePkg.New(updatedMemo.UpdatedAt),
 		},
 	}, nil
 }

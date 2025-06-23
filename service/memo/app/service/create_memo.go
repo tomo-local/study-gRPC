@@ -11,29 +11,25 @@ import (
 )
 
 func (s *MemoService) CreateMemo(ctx context.Context, req *grpcPkg.CreateMemoRequest) (*grpcPkg.CreateMemoResponse, error) {
-	// ID生成
-	id := uuid.New().String()
-	fileType := model.FileTypeMd
-	now := timePkg.Now().AsTime()
-
 	memo := &model.Memo{
-		ID:         id,
-		FileType:   fileType,
-		Title:      req.Title,
-		Content:    req.Content,
-		ModifiedAt: now,
+		ID:       uuid.New().String(),
+		FileType: model.FileTypeMd,
+		Title:    req.Title,
+		Content:  req.Content,
 	}
 
-	if _, err := s.FileService.CreateFile(memo); err != nil {
-		return nil, fmt.Errorf("ファイル保存失敗: %w", err)
+	createdMemo, err := s.FileService.CreateFile(memo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create file: %w", err)
 	}
 
 	return &grpcPkg.CreateMemoResponse{
 		Memo: &grpcPkg.Memo{
-			Id:         memo.ID,
-			Title:      memo.Title,
-			Content:    memo.Content,
-			ModifiedAt: timePkg.New(now),
+			Id:        createdMemo.ID,
+			Title:     createdMemo.Title,
+			Content:   createdMemo.Content,
+			CreatedAt: timePkg.New(createdMemo.CreatedAt),
+			UpdatedAt: timePkg.New(createdMemo.UpdatedAt),
 		},
 	}, nil
 }
