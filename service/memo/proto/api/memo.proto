@@ -11,8 +11,8 @@ service MemoService {
   rpc CreateMemo (CreateMemoRequest) returns (CreateMemoResponse);
   rpc CreateMemoByJson (CreateMemoByJsonRequest) returns (CreateMemoByJsonResponse);
   rpc GetMemo  (GetMemoRequest) returns (GetMemoResponse);
-  rpc GetMultiMemos (stream GetMultiMemoRequest) returns (stream GetMultiMemoResponse);
-  rpc ListMemos (ListMemosRequest) returns (stream Memo);
+  rpc GetMultiMemos (GetMultiMemoRequest) returns (GetMultiMemoResponse);
+  rpc ListMemos (ListMemosRequest) returns (ListMemosResponse);
   rpc UpdateMemo (UpdateMemoRequest) returns (UpdateMemoResponse);
 }
 
