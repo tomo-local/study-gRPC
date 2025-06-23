@@ -9,6 +9,7 @@ package memo;
 
 service MemoService {
   rpc CreateMemo (CreateMemoRequest) returns (CreateMemoResponse);
+  rpc CreateMemoByJson (CreateMemoByJsonRequest) returns (CreateMemoByJsonResponse);
   rpc GetMemo  (GetMemoRequest) returns (GetMemoResponse);
   rpc GetMultiMemos (stream GetMultiMemoRequest) returns (stream GetMultiMemoResponse);
   rpc ListMemos (ListMemosRequest) returns (stream Memo);
@@ -29,6 +30,15 @@ message CreateMemoRequest {
 }
 
 message CreateMemoResponse {
+  Memo memo = 1;
+}
+
+message CreateMemoByJsonRequest {
+  string title = 1;
+  string content= 2;
+}
+
+message CreateMemoByJsonResponse {
   Memo memo = 1;
 }
 
