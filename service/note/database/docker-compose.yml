@@ -12,7 +12,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U noteuser -d notedb"]
@@ -20,4 +21,6 @@ services:
       timeout: 5s
       retries: 5
 
-
+volumes:
+  postgres_data:
+    driver: local
