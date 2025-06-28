@@ -1,0 +1,9 @@
+# DBの永続化ファイルを無視するよ！🗃️
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+~/database/db/
