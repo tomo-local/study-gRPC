@@ -6,4 +6,6 @@
 *.db-wal
 *.db-shm
 
-~/database/db/
+# database/dataは以下のファイルは全て無視
+# ただし、database/data/notes.jsonは除外するよ！📄
+!database/data/
