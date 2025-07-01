@@ -26,8 +26,6 @@ func NewNoteServer(database *db.DB) *NoteServer {
 
 // CreateNote creates a new note
 func (s *NoteServer) CreateNote(ctx context.Context, req *pb.CreateNoteRequest) (*pb.CreateNoteResponse, error) {
-	log.Printf("📝 Creating note: %s", req.Title)
-
 	note := &model.Note{
 		Title:    req.Title,
 		Content:  req.Content,
