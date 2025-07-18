@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "auth/grpc/api";
+
+// 認証サービス
+service AuthService {
+  // ユーザー登録
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // メールアドレス認証
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+
+  // ログイン
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // トークン検証
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+
+  // パスワードリセット要求
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
+
+  // パスワードリセット
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+
+  // 認証確認メール再送
+  rpc ResendVerificationEmail(ResendVerificationEmailRequest) returns (ResendVerificationEmailResponse);
+}
+
+// ユーザー登録リクエスト
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+}
+
+// ユーザー登録レスポンス
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+  string user_id = 3;
+}
+
+// メールアドレス認証リクエスト
+message VerifyEmailRequest {
+  string token = 1;
+}
+
+// メールアドレス認証レスポンス
+message VerifyEmailResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ログインリクエスト
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// ログインレスポンス
+message LoginResponse {
+  bool success = 1;
+  string message = 2;
+  string access_token = 3;
+  string refresh_token = 4;
+  User user = 5;
+}
+
+// トークン検証リクエスト
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+// トークン検証レスポンス
+message VerifyTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string email = 3;
+  string name = 4;
+}
+
+// パスワードリセット要求リクエスト
+message RequestPasswordResetRequest {
+  string email = 1;
+}
+
+// パスワードリセット要求レスポンス
+message RequestPasswordResetResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// パスワードリセットリクエスト
+message ResetPasswordRequest {
+  string token = 1;
+  string new_password = 2;
+}
+
+// パスワードリセットレスポンス
+message ResetPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 認証確認メール再送リクエスト
+message ResendVerificationEmailRequest {
+  string email = 1;
+}
+
+// 認証確認メール再送レスポンス
+message ResendVerificationEmailResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ユーザー情報
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  bool email_verified = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
