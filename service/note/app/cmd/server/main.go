@@ -28,21 +28,18 @@ func main() {
 
 	log.Printf("✅ Config loaded - Port: %d, Env: %s", cfg.Port, cfg.Env)
 
-	// データベース接続
-	dbConfig := db.Config{
+	database, err := db.New(db.Config{
 		Host:     cfg.Database.Host,
-		Port:     cfg.Database.Port,
+		Name:     cfg.Database.DBName,
 		User:     cfg.Database.User,
 		Password: cfg.Database.Password,
-		DBName:   cfg.Database.DBName,
+		Port:     cfg.Database.Port,
 		SSLMode:  cfg.Database.SSLMode,
-	}
+	})
 
-	database, err := db.NewPostgreSQL(dbConfig)
 	if err != nil {
 		log.Fatalf("❌ Failed to connect to database: %v", err)
 	}
-	defer database.Close()
 
 	log.Println("✅ Database connected successfully!")
 
