@@ -25,6 +25,14 @@ jobs:
           echo "$services_multiline" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Create labels if not exist
+        if: steps.detect.outputs.services != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          services="${{ steps.detect.outputs.services }}"
+          bash scripts/git/create-labels.sh "$services"
+
       - name: Add label to PR
         if: steps.detect.outputs.services != ''
         uses: actions-ecosystem/action-add-labels@v1
