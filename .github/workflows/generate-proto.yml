@@ -31,4 +31,4 @@ jobs:
           docker run --rm -v ${{ github.workspace }}:/workspace proto-gen bash /workspace/scripts/generate-proto.sh
 
       - name: Commit and push changes
-        run: scripts/git-auto-commit.sh "github-actions[bot]" "github-actions[bot]@users.noreply.github.com"
+        run: scripts/git/git-auto-commit.sh "github-actions[bot]" "github-actions[bot]@users.noreply.github.com"
