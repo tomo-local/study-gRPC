@@ -2,7 +2,6 @@ package db
 
 import (
 	"auth/db/model"
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -16,11 +15,7 @@ func (d *db) CreateUser(tx *gorm.DB, user *model.User) error {
 		tx = d.client
 	}
 
-	if err := tx.Create(user).Error; err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
-	}
-
-	return nil
+	return tx.Create(user).Error
 }
 
 // GetUserByID はIDからユーザーを取得します。
@@ -32,9 +27,9 @@ func (d *db) GetUserByID(tx *gorm.DB, id string) (*model.User, error) {
 	var user model.User
 	if err := tx.Where("id = ?", id).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("user not found: %s", id)
+			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+		return nil, err
 	}
 
 	return &user, nil
@@ -49,9 +44,9 @@ func (d *db) GetUserByEmail(tx *gorm.DB, email string) (*model.User, error) {
 	var user model.User
 	if err := tx.Where("email = ?", email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("user not found: %s", email)
+			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to get user by email: %w", err)
+		return nil, err
 	}
 
 	return &user, nil
@@ -63,8 +58,8 @@ func (d *db) UpdateUser(tx *gorm.DB, user *model.User) error {
 		tx = d.client
 	}
 
-	if err := tx.Save(user).Error; err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
+	if err := tx.Updates(user).Error; err != nil {
+		return err
 	}
 
 	return nil
@@ -76,11 +71,7 @@ func (d *db) DeleteUser(tx *gorm.DB, id string) error {
 		tx = d.client
 	}
 
-	if err := tx.Delete(&model.User{}, "id = ?", id).Error; err != nil {
-		return fmt.Errorf("failed to delete user: %w", err)
-	}
-
-	return nil
+	return tx.Delete(&model.User{}, "id = ?", id).Error
 }
 
 // EmailVerificationToken関連のメソッド
@@ -91,11 +82,7 @@ func (d *db) CreateEmailVerificationToken(tx *gorm.DB, token *model.EmailVerific
 		tx = d.client
 	}
 
-	if err := tx.Create(token).Error; err != nil {
-		return fmt.Errorf("failed to create email verification token: %w", err)
-	}
-
-	return nil
+	return tx.Create(token).Error
 }
 
 // GetEmailVerificationTokenByToken はトークンからメールアドレス認証トークンを取得します。
@@ -107,9 +94,9 @@ func (d *db) GetEmailVerificationTokenByToken(tx *gorm.DB, token string) (*model
 	var emailToken model.EmailVerificationToken
 	if err := tx.Where("token = ?", token).First(&emailToken).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("email verification token not found: %s", token)
+			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to get email verification token: %w", err)
+		return nil, err
 	}
 
 	return &emailToken, nil
@@ -117,12 +104,10 @@ func (d *db) GetEmailVerificationTokenByToken(tx *gorm.DB, token string) (*model
 
 // UpdateEmailVerificationToken はメールアドレス認証トークンを更新します。
 func (d *db) UpdateEmailVerificationToken(tx *gorm.DB, token *model.EmailVerificationToken) error {
-	if tx == nil {
-		tx = d.client
-	}
+	client := d.getClient(tx)
 
-	if err := tx.Save(token).Error; err != nil {
-		return fmt.Errorf("failed to update email verification token: %w", err)
+	if err := client.Updates(token).Error; err != nil {
+		return err
 	}
 
 	return nil
@@ -130,12 +115,10 @@ func (d *db) UpdateEmailVerificationToken(tx *gorm.DB, token *model.EmailVerific
 
 // DeleteEmailVerificationToken はメールアドレス認証トークンを削除します。
 func (d *db) DeleteEmailVerificationToken(tx *gorm.DB, id string) error {
-	if tx == nil {
-		tx = d.client
-	}
+	client := d.getClient(tx)
 
-	if err := tx.Delete(&model.EmailVerificationToken{}, "id = ?", id).Error; err != nil {
-		return fmt.Errorf("failed to delete email verification token: %w", err)
+	if err := client.Delete(&model.EmailVerificationToken{}, "id = ?", id).Error; err != nil {
+		return err
 	}
 
 	return nil
@@ -145,12 +128,10 @@ func (d *db) DeleteEmailVerificationToken(tx *gorm.DB, id string) error {
 
 // CreatePasswordResetToken は新しいパスワードリセットトークンを作成します。
 func (d *db) CreatePasswordResetToken(tx *gorm.DB, token *model.PasswordResetToken) error {
-	if tx == nil {
-		tx = d.client
-	}
+	client := d.getClient(tx)
 
-	if err := tx.Create(token).Error; err != nil {
-		return fmt.Errorf("failed to create password reset token: %w", err)
+	if err := client.Create(token).Error; err != nil {
+		return err
 	}
 
 	return nil
@@ -158,16 +139,11 @@ func (d *db) CreatePasswordResetToken(tx *gorm.DB, token *model.PasswordResetTok
 
 // GetPasswordResetTokenByToken はトークンからパスワードリセットトークンを取得します。
 func (d *db) GetPasswordResetTokenByToken(tx *gorm.DB, token string) (*model.PasswordResetToken, error) {
-	if tx == nil {
-		tx = d.client
-	}
+	client := d.getClient(tx)
 
 	var resetToken model.PasswordResetToken
-	if err := tx.Where("token = ?", token).First(&resetToken).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("password reset token not found: %s", token)
-		}
-		return nil, fmt.Errorf("failed to get password reset token: %w", err)
+	if err := client.Where("token = ?", token).First(&resetToken).Error; err != nil {
+		return nil, err
 	}
 
 	return &resetToken, nil
@@ -175,12 +151,10 @@ func (d *db) GetPasswordResetTokenByToken(tx *gorm.DB, token string) (*model.Pas
 
 // UpdatePasswordResetToken はパスワードリセットトークンを更新します。
 func (d *db) UpdatePasswordResetToken(tx *gorm.DB, token *model.PasswordResetToken) error {
-	if tx == nil {
-		tx = d.client
-	}
+	client := d.getClient(tx)
 
-	if err := tx.Save(token).Error; err != nil {
-		return fmt.Errorf("failed to update password reset token: %w", err)
+	if err := client.Updates(token).Error; err != nil {
+		return err
 	}
 
 	return nil
@@ -188,12 +162,10 @@ func (d *db) UpdatePasswordResetToken(tx *gorm.DB, token *model.PasswordResetTok
 
 // DeletePasswordResetToken はパスワードリセットトークンを削除します。
 func (d *db) DeletePasswordResetToken(tx *gorm.DB, id string) error {
-	if tx == nil {
-		tx = d.client
-	}
+	client := d.getClient(tx)
 
-	if err := tx.Delete(&model.PasswordResetToken{}, "id = ?", id).Error; err != nil {
-		return fmt.Errorf("failed to delete password reset token: %w", err)
+	if err := client.Delete(&model.PasswordResetToken{}, "id = ?", id).Error; err != nil {
+		return err
 	}
 
 	return nil
@@ -201,12 +173,10 @@ func (d *db) DeletePasswordResetToken(tx *gorm.DB, id string) error {
 
 // DeleteExpiredPasswordResetTokens は期限切れのパスワードリセットトークンを削除します。
 func (d *db) DeleteExpiredPasswordResetTokens(tx *gorm.DB) error {
-	if tx == nil {
-		tx = d.client
-	}
+	client := d.getClient(tx)
 
-	if err := tx.Where("expires_at < ?", time.Now()).Delete(&model.PasswordResetToken{}).Error; err != nil {
-		return fmt.Errorf("failed to delete expired password reset tokens: %w", err)
+	if err := client.Where("expires_at < ?", time.Now()).Delete(&model.PasswordResetToken{}).Error; err != nil {
+		return err
 	}
 
 	return nil
