@@ -20,7 +20,5 @@ done
 
 # GitHub Actions用にラベルをカンマ区切りで出力（空の場合は何も出力しない）
 if [ ${#found[@]} -gt 0 ]; then
-  for s in \"${found[@]}\"; do
-    echo \"$s\"
-  done
+  IFS=','; echo "${found[*]}"
 fi
