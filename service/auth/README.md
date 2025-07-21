@@ -84,33 +84,34 @@ cd service/auth/database
 docker-compose up -d
 ```
 
-### 4. 設定ファイルの調整
+### 4. 環境変数の設定
 
-`config.yml`を環境に合わせて調整：
+このプロジェクトは環境変数で設定を管理します。開発環境でのセットアップ手順：
 
-```yaml
-server:
-  port: 50053
+#### 4-1. 環境変数ファイルをコピー
 
-database:
-  host: localhost
-  port: 5432
-  user: postgres
-  password: password
-  name: auth_db
-  ssl_mode: disable
-
-jwt:
-  secret_key: your-secret-key-change-this-in-production
-  token_duration_hours: 24
-
-mailer:
-  host: smtp.gmail.com
-  port: 587
-  username: your-email@gmail.com
-  password: your-app-password
-  from: your-email@gmail.com
+```bash
+cp .env.example .env
 ```
+
+#### 4-2. 必要に応じて設定値を変更
+
+`.env`ファイルを開いて、あなたの環境に合わせて値を変更してください：
+
+```bash
+# 特に以下の項目は必ず変更してください 🔒
+JWT_SECRET_KEY=your-super-secret-key-change-this-in-production
+DB_PASSWORD=your-database-password
+MAILER_USERNAME=your-email@gmail.com
+MAILER_PASSWORD=your-app-password
+MAILER_FROM=your-email@gmail.com
+```
+
+#### 4-3. セキュリティ注意事項 ⚠️
+
+- `.env`ファイルは`.gitignore`に含まれているため、Gitにコミットされません
+- 本番環境では必ず強固な秘密鍵とパスワードを使用してください
+- メールのパスワードにはアプリパスワードを使用することをおすすめします
 
 ### 5. サーバー起動
 
@@ -121,11 +122,30 @@ go run cmd/server/main.go
 
 ## 環境変数
 
+このプロジェクトは環境変数で設定を管理します。
+
+### 必須環境変数 📋
+
+以下の環境変数は必須です（設定されていないとアプリが起動しません）：
+
+- `DB_HOST` - データベースホスト
+- `DB_USER` - データベースユーザー
+- `DB_PASSWORD` - データベースパスワード
+- `DB_NAME` - データベース名
+- `JWT_SECRET_KEY` - JWT署名用の秘密鍵
+- `MAILER_HOST` - メールサーバーホスト
+- `MAILER_PORT` - メールサーバーポート
+- `MAILER_USERNAME` - メールアカウントのユーザー名
+- `MAILER_PASSWORD` - メールアカウントのパスワード
+- `MAILER_FROM` - 送信元メールアドレス
+
+### 全環境変数一覧
+
 設定ファイルの代わりに環境変数でも設定可能：
 
 ```bash
 # Server
-export SERVER_PORT=50053
+export SERVER_PORT=8080
 
 # Database
 export DB_HOST=localhost

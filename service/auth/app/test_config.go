@@ -22,7 +22,7 @@ func main() {
 	fmt.Printf("  JWT_SECRET_KEY: %s\n", os.Getenv("JWT_SECRET_KEY"))
 
 	// 設定を読み込み
-	cfg, err := config.LoadConfigWithAutoPath()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
