@@ -32,3 +32,6 @@ service/memo/app/tmp/
 
 # debugファイル
 __debug_bin*
+
+# Docker関連のファイル
+service/*/database/data/
