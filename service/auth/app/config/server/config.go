@@ -2,9 +2,11 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
-	"strconv"
+	"path/filepath"
 
+	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,36 +18,81 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port int `yaml:"port" envconfig:"SERVER_PORT"`
 }
 
 type DatabaseConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Name     string `yaml:"name"`
-	SSLMode  string `yaml:"ssl_mode"`
+	Host     string `yaml:"host" envconfig:"DB_HOST" default:"localhost"`
+	Port     int    `yaml:"port" envconfig:"DB_PORT" default:"5432"`
+	User     string `yaml:"user" envconfig:"DB_USER" default:"postgres"`
+	Password string `yaml:"password" envconfig:"DB_PASSWORD" default:"password"`
+	Name     string `yaml:"name" envconfig:"DB_NAME" default:"auth_db"`
+	SSLMode  string `yaml:"ssl_mode" envconfig:"DB_SSL_MODE" default:"disable"`
 }
 
 type JWTConfig struct {
-	SecretKey      string `yaml:"secret_key"`
-	TokenDurationH int    `yaml:"token_duration_hours"`
+	SecretKey      string `yaml:"secret_key" envconfig:"JWT_SECRET_KEY"`
+	TokenDurationH int    `yaml:"token_duration_hours" envconfig:"JWT_TOKEN_DURATION_HOURS"`
 }
 
 type MailerConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	From     string `yaml:"from"`
+	Host     string `yaml:"host" envconfig:"MAILER_HOST"`
+	Port     int    `yaml:"port" envconfig:"MAILER_PORT"`
+	Username string `yaml:"username" envconfig:"MAILER_USERNAME"`
+	Password string `yaml:"password" envconfig:"MAILER_PASSWORD"`
+	From     string `yaml:"from" envconfig:"MAILER_FROM"`
+}
+
+// LoadConfigWithAutoPath は設定ファイルのパスを自動決定して設定を読み込む
+func LoadConfigWithAutoPath() (*Config, error) {
+	configPath := findConfigPath()
+	log.Printf("Loading config from: %s", configPath)
+	return LoadConfig(configPath)
+}
+
+// findConfigPath は設定ファイルのパスを決定する
+func findConfigPath() string {
+	// 1. 環境変数をチェック
+	if configPath := os.Getenv("AUTH_CONFIG_PATH"); configPath != "" {
+		log.Printf("Using config path from environment variable: %s", configPath)
+		return configPath
+	}
+
+	// 2. 実行ファイルの場所から相対的にパスを計算
+	execPath, err := os.Executable()
+	if err == nil {
+		// 実行ファイルのディレクトリから ../../config.yml を計算
+		execDir := filepath.Dir(execPath)
+		configPath := filepath.Join(execDir, "..", "..", "config.yml")
+		if _, err := os.Stat(configPath); err == nil {
+			log.Printf("Found config file relative to executable: %s", configPath)
+			return configPath
+		}
+	}
+
+	// 3. デフォルトの相対パス
+	defaultPaths := []string{
+		"../../config.yml", // 開発時の場合
+		"../config.yml",    // 別の場合
+		"./config.yml",     // 同じディレクトリ
+		"config.yml",       // カレントディレクトリ
+	}
+
+	for _, path := range defaultPaths {
+		if _, err := os.Stat(path); err == nil {
+			log.Printf("Found config file at: %s", path)
+			return path
+		}
+	}
+
+	// 4. デフォルト値を返す（警告付き）
+	defaultPath := "../../config.yml"
+	log.Printf("Warning: Config file not found, using default path: %s", defaultPath)
+	return defaultPath
 }
 
 func LoadConfig(configPath string) (*Config, error) {
 	config := &Config{}
-
-	// デフォルト値の設定
-	setDefaults(config)
 
 	// 設定ファイルを読み込み
 	if configPath != "" {
@@ -63,120 +110,10 @@ func LoadConfig(configPath string) (*Config, error) {
 		}
 	}
 
-	// 環境変数で設定を上書き
-	if err := overrideWithEnv(config); err != nil {
-		return nil, fmt.Errorf("failed to override config with environment variables: %w", err)
+	// envconfigを使って環境変数で設定を上書き
+	if err := envconfig.Process("", config); err != nil {
+		return nil, fmt.Errorf("failed to process environment variables: %w", err)
 	}
 
 	return config, nil
-}
-
-func overrideWithEnv(config *Config) error {
-	// Server
-	if port := os.Getenv("SERVER_PORT"); port != "" {
-		p, err := strconv.Atoi(port)
-		if err != nil {
-			return fmt.Errorf("invalid SERVER_PORT: %w", err)
-		}
-		config.Server.Port = p
-	}
-
-	// Database
-	if host := os.Getenv("DB_HOST"); host != "" {
-		config.Database.Host = host
-	}
-	if port := os.Getenv("DB_PORT"); port != "" {
-		p, err := strconv.Atoi(port)
-		if err != nil {
-			return fmt.Errorf("invalid DB_PORT: %w", err)
-		}
-		config.Database.Port = p
-	}
-	if user := os.Getenv("DB_USER"); user != "" {
-		config.Database.User = user
-	}
-	if password := os.Getenv("DB_PASSWORD"); password != "" {
-		config.Database.Password = password
-	}
-	if name := os.Getenv("DB_NAME"); name != "" {
-		config.Database.Name = name
-	}
-	if sslMode := os.Getenv("DB_SSL_MODE"); sslMode != "" {
-		config.Database.SSLMode = sslMode
-	}
-
-	// JWT
-	if secretKey := os.Getenv("JWT_SECRET_KEY"); secretKey != "" {
-		config.JWT.SecretKey = secretKey
-	}
-	if tokenDuration := os.Getenv("JWT_TOKEN_DURATION_HOURS"); tokenDuration != "" {
-		d, err := strconv.Atoi(tokenDuration)
-		if err != nil {
-			return fmt.Errorf("invalid JWT_TOKEN_DURATION_HOURS: %w", err)
-		}
-		config.JWT.TokenDurationH = d
-	}
-
-	// Mailer
-	if host := os.Getenv("MAILER_HOST"); host != "" {
-		config.Mailer.Host = host
-	}
-	if port := os.Getenv("MAILER_PORT"); port != "" {
-		p, err := strconv.Atoi(port)
-		if err != nil {
-			return fmt.Errorf("invalid MAILER_PORT: %w", err)
-		}
-		config.Mailer.Port = p
-	}
-	if username := os.Getenv("MAILER_USERNAME"); username != "" {
-		config.Mailer.Username = username
-	}
-	if password := os.Getenv("MAILER_PASSWORD"); password != "" {
-		config.Mailer.Password = password
-	}
-	if from := os.Getenv("MAILER_FROM"); from != "" {
-		config.Mailer.From = from
-	}
-
-	return nil
-}
-
-func setDefaults(config *Config) {
-	// Server
-	if config.Server.Port == 0 {
-		config.Server.Port = 50053
-	}
-
-	// Database
-	if config.Database.Host == "" {
-		config.Database.Host = "localhost"
-	}
-	if config.Database.Port == 0 {
-		config.Database.Port = 5432
-	}
-	if config.Database.User == "" {
-		config.Database.User = "postgres"
-	}
-	if config.Database.Name == "" {
-		config.Database.Name = "auth_db"
-	}
-	if config.Database.SSLMode == "" {
-		config.Database.SSLMode = "disable"
-	}
-
-	// JWT
-	if config.JWT.SecretKey == "" {
-		config.JWT.SecretKey = "your-secret-key-change-this-in-production"
-	}
-	if config.JWT.TokenDurationH == 0 {
-		config.JWT.TokenDurationH = 24
-	}
-
-	// Mailer
-	if config.Mailer.Host == "" {
-		config.Mailer.Host = "smtp.gmail.com"
-	}
-	if config.Mailer.Port == 0 {
-		config.Mailer.Port = 587
-	}
 }
