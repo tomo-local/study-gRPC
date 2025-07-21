@@ -19,8 +19,19 @@ jobs:
         run: |
           files=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
           services=$(bash scripts/git/detect-microservice.sh "$files")
-          # 改行区切りで出力
-          echo -e "services=$(echo "$services" | tr ',' '\n')" >> $GITHUB_OUTPUT
+          # カンマ区切りを改行区切りに変換
+          services_multiline=$(echo "$services" | tr ',' '\n')
+          echo "services<<EOF" >> $GITHUB_OUTPUT
+          echo "$services_multiline" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create labels if not exist
+        if: steps.detect.outputs.services != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          services="${{ steps.detect.outputs.services }}"
+          bash scripts/git/create-labels.sh "$services"
 
       - name: Add label to PR
         if: steps.detect.outputs.services != ''
