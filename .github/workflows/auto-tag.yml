@@ -19,8 +19,7 @@ jobs:
         run: |
           files=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
           services=$(bash scripts/git/detect-microservice.sh "$files")
-          # 改行区切りで出力
-          echo -e "services=$(echo "$services" | tr ',' '\n')" >> $GITHUB_OUTPUT
+          echo "services=$services" >> $GITHUB_OUTPUT
 
       - name: Add label to PR
         if: steps.detect.outputs.services != ''
