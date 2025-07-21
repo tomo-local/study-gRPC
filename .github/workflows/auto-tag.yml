@@ -19,12 +19,13 @@ jobs:
         run: |
           files=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
           services=$(bash scripts/git/detect-microservice.sh "$files")
-          echo "services=$services" >> $GITHUB_OUTPUT
+          # カンマ区切りをスペース区切りに変換
+          services_spaced=$(echo "$services" | tr ',' '|')
+          echo "services=$services_spaced" >> $GITHUB_OUTPUT
 
       - name: Add label to PR
         if: steps.detect.outputs.services != ''
         uses: actions-ecosystem/action-add-labels@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          labels: |
-            ${{ steps.detect.outputs.services }}
+          labels: ${{ steps.detect.outputs.services }}
