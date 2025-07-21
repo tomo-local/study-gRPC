@@ -84,15 +84,44 @@ cd service/auth/database
 docker-compose up -d
 ```
 
+**⚠️ 重要**: データベースが起動していないと以下のようなエラーが発生します：
+```
+failed to connect to `user=postgres database=auth_db`: dial tcp [::1]:5432: connect: connection refused
+```
+
+この場合は以下のコマンドでデータベースの状態を確認してください：
+
+```bash
+# データベースコンテナの状態確認
+docker-compose ps
+
+# ログを確認
+docker-compose logs postgres
+
+# データベースを再起動
+docker-compose restart postgres
+
+# 完全に停止して再起動
+docker-compose down && docker-compose up -d
+```
+
 ### 4. 環境変数の設定
 
 このプロジェクトは環境変数で設定を管理します。開発環境でのセットアップ手順：
 
 #### 4-1. 環境変数ファイルをコピー
 
+**最初に必ずこの手順を実行してください！**
+
 ```bash
+# service/auth ディレクトリに移動
+cd service/auth
+
+# .env.example を .env にコピー
 cp .env.example .env
 ```
+
+**注意**: この手順を実行しないと、必須の環境変数が設定されずにアプリケーションが起動しません。
 
 #### 4-2. 必要に応じて設定値を変更
 
@@ -218,6 +247,48 @@ rpc ResendVerificationEmail(ResendVerificationEmailRequest) returns (ResendVerif
 ```bash
 go test ./...
 ```
+
+### よくあるトラブルシューティング 🔧
+
+#### データベース接続エラー
+```
+failed to connect to `user=postgres database=auth_db`: dial tcp [::1]:5432: connect: connection refused
+```
+
+**解決方法:**
+1. PostgreSQLコンテナが起動しているか確認
+   ```bash
+   cd service/auth/database
+   docker-compose ps
+   ```
+
+2. コンテナを再起動
+   ```bash
+   docker-compose restart postgres
+   ```
+
+3. ポート5432が他のプロセスで使用されていないか確認
+   ```bash
+   lsof -i :5432
+   ```
+
+#### 環境変数設定エラー
+```
+failed to process environment variables: required key [環境変数名] missing value
+```
+
+**解決方法:**
+1. `.env`ファイルが存在することを確認
+   ```bash
+   ls -la .env
+   ```
+
+2. `.env.example`から`.env`をコピー
+   ```bash
+   cp .env.example .env
+   ```
+
+3. 必須の環境変数が設定されているか確認
 
 ### データベース接続確認
 
