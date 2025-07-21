@@ -37,9 +37,7 @@ message RegisterRequest {
 
 // ユーザー登録レスポンス
 message RegisterResponse {
-  bool success = 1;
-  string message = 2;
-  string user_id = 3;
+  string user_id = 1;
 }
 
 // メールアドレス認証リクエスト
@@ -49,8 +47,6 @@ message VerifyEmailRequest {
 
 // メールアドレス認証レスポンス
 message VerifyEmailResponse {
-  bool success = 1;
-  string message = 2;
 }
 
 // ログインリクエスト
@@ -61,11 +57,9 @@ message LoginRequest {
 
 // ログインレスポンス
 message LoginResponse {
-  bool success = 1;
-  string message = 2;
-  string access_token = 3;
-  string refresh_token = 4;
-  User user = 5;
+  string access_token = 1;
+  string refresh_token = 2;
+  User user = 3;
 }
 
 // トークン検証リクエスト
@@ -75,10 +69,9 @@ message VerifyTokenRequest {
 
 // トークン検証レスポンス
 message VerifyTokenResponse {
-  bool valid = 1;
-  string user_id = 2;
-  string email = 3;
-  string name = 4;
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
 }
 
 // パスワードリセット要求リクエスト
@@ -88,8 +81,6 @@ message RequestPasswordResetRequest {
 
 // パスワードリセット要求レスポンス
 message RequestPasswordResetResponse {
-  bool success = 1;
-  string message = 2;
 }
 
 // パスワードリセットリクエスト
@@ -100,8 +91,6 @@ message ResetPasswordRequest {
 
 // パスワードリセットレスポンス
 message ResetPasswordResponse {
-  bool success = 1;
-  string message = 2;
 }
 
 // 認証確認メール再送リクエスト
@@ -111,8 +100,6 @@ message ResendVerificationEmailRequest {
 
 // 認証確認メール再送レスポンス
 message ResendVerificationEmailResponse {
-  bool success = 1;
-  string message = 2;
 }
 
 // ユーザー情報
