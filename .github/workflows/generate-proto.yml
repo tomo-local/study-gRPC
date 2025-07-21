@@ -8,9 +8,13 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 全履歴を取得してgit diffを確実に実行
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -22,13 +26,137 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y protobuf-compiler
 
-      - name: Install protoc-gen-go
-        run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-
-      - name: Generate pb.go files (Docker)
+      - name: Install protoc-gen-go and protoc-gen-go-grpc
         run: |
-          docker build -t proto-gen -f scripts/proto/Dockerfile .
-          docker run --rm -v ${{ github.workspace }}:/workspace proto-gen bash /workspace/scripts/generate-proto.sh
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      - name: Get changed proto files
+        id: changed-protos
+        run: |
+          echo "🔍 Detecting changed proto files from push..."
+          echo "🔧 Debug info:"
+          echo "   Event name: ${{ github.event_name }}"
+          echo "   Before SHA: ${{ github.event.before }}"
+          echo "   Current SHA: ${{ github.sha }}"
+          echo "   Ref: ${{ github.ref }}"
+
+          # pushされた変更ファイルを確実に取得
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "📋 Push event detected"
+
+            # 複数の方法を順番に試す
+            all_changed=""
+
+            # 方法1: beforeとcurrentの差分（通常のpush）
+            if [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ] && git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
+              echo "   Method 1: Using before..current range"
+              all_changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || echo "")
+            fi
+
+            # 方法2: HEAD~1..HEAD（single commit push）
+            if [ -z "$all_changed" ]; then
+              echo "   Method 2: Using HEAD~1..HEAD"
+              all_changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            fi
+
+            # 方法3: git showでHEADの変更ファイル
+            if [ -z "$all_changed" ]; then
+              echo "   Method 3: Using git show"
+              all_changed=$(git show --name-only --pretty="" HEAD 2>/dev/null || echo "")
+            fi
+
+            echo "🔍 All changed files:"
+            if [ -n "$all_changed" ]; then
+              echo "$all_changed" | sed 's/^/   /'
+            else
+              echo "   No files changed"
+            fi
+
+            # .protoファイルのみを抽出
+            changed_proto_files=$(echo "$all_changed" | grep '\.proto$' || echo "")
+          else
+            echo "📋 Non-push event, using HEAD~1..HEAD"
+            all_changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git show --name-only --pretty="" HEAD)
+            echo "🔍 All changed files:"
+            echo "$all_changed" | sed 's/^/   /'
+            changed_proto_files=$(echo "$all_changed" | grep '\.proto$' || echo "")
+          fi
+
+          echo "📄 Changed proto files:"
+          if [ -n "$changed_proto_files" ]; then
+            echo "$changed_proto_files" | sed 's/^/   /'
+          else
+            echo "   No proto files changed"
+          fi
+
+          # 変更されたprotoファイルからサービス名を抽出
+          services=()
+          if [ -n "$changed_proto_files" ]; then
+            while IFS= read -r file; do
+              if [ -n "$file" ]; then
+                echo "🔎 Processing proto file: $file"
+                # service/*/proto/**/*.protoのパターンをチェック
+                if [[ $file == service/*/proto/**/*.proto ]]; then
+                  service=$(echo $file | cut -d'/' -f2)
+                  echo "   └── Detected service: $service"
+
+                  # 重複チェック
+                  if [[ ! " ${services[@]} " =~ " $service " ]]; then
+                    services+=("$service")
+                  else
+                    echo "   └── Service $service already added"
+                  fi
+                else
+                  echo "   └── Skipping (not in service/*/proto/ pattern)"
+                fi
+              fi
+            done <<< "$changed_proto_files"
+          fi
+
+          # サービスリストをスペース区切りで出力
+          target_services="${services[*]}"
+          echo "🎯 Target services: ${target_services:-none}"
+          echo "target_services=$target_services" >> $GITHUB_OUTPUT
+
+      - name: Generate pb.go
+        if: steps.changed-protos.outputs.target_services != ''
+        run: |
+          target_services="${{ steps.changed-protos.outputs.target_services }}"
+          if [ -n "$target_services" ]; then
+            echo "🚀 Generating proto files for services: $target_services"
+            sh scripts/proto/generate-proto.sh $target_services
+            echo "✅ Proto generation completed"
+          else
+            echo "⏭️  No proto files changed, skipping generation"
+          fi
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          echo "🔍 Checking for generated proto file changes..."
+          
+          # proto生成で作られる.pb.goファイルのみをチェック
+          proto_changes=$(git status --porcelain | grep -E '\.(pb\.go|_grpc\.pb\.go)$' || echo "")
+          
+          if [ -n "$proto_changes" ]; then
+            echo "📝 Changes detected in generated proto files:"
+            echo "$proto_changes" | sed 's/^/   /'
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "🟰 No changes in generated proto files"
+            # 念のため全体の変更も表示（デバッグ用）
+            all_changes=$(git status --porcelain || echo "")
+            if [ -n "$all_changes" ]; then
+              echo "   (Other changes detected but not proto-related:)"
+              echo "$all_changes" | sed 's/^/   /'
+            fi
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit and push changes
-        run: scripts/git/git-auto-commit.sh "github-actions[bot]" "github-actions[bot]@users.noreply.github.com"
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          echo "💾 Committing and pushing generated proto files..."
+          sh scripts/git/git-auto-commit.sh "github-actions[bot]" "github-actions[bot]@users.noreply.github.com"
+          echo "🎉 Changes pushed successfully"

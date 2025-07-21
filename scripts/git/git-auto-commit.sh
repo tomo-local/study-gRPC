@@ -8,5 +8,5 @@ GIT_USER_EMAIL=${2:-'github-actions[bot]@users.noreply.github.com'}
 git config --global user.name "$GIT_USER_NAME"
 git config --global user.email "$GIT_USER_EMAIL"
 git add .
-git diff --cached --quiet || git commit -m "Auto-generate pb.go files from proto"
+git commit -m "Auto-generate pb.go files from proto"
 git push
