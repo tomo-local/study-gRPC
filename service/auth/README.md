@@ -84,33 +84,63 @@ cd service/auth/database
 docker-compose up -d
 ```
 
-### 4. 設定ファイルの調整
-
-`config.yml`を環境に合わせて調整：
-
-```yaml
-server:
-  port: 50053
-
-database:
-  host: localhost
-  port: 5432
-  user: postgres
-  password: password
-  name: auth_db
-  ssl_mode: disable
-
-jwt:
-  secret_key: your-secret-key-change-this-in-production
-  token_duration_hours: 24
-
-mailer:
-  host: smtp.gmail.com
-  port: 587
-  username: your-email@gmail.com
-  password: your-app-password
-  from: your-email@gmail.com
+**⚠️ 重要**: データベースが起動していないと以下のようなエラーが発生します：
 ```
+failed to connect to `user=postgres database=auth_db`: dial tcp [::1]:5432: connect: connection refused
+```
+
+この場合は以下のコマンドでデータベースの状態を確認してください：
+
+```bash
+# データベースコンテナの状態確認
+docker-compose ps
+
+# ログを確認
+docker-compose logs postgres
+
+# データベースを再起動
+docker-compose restart postgres
+
+# 完全に停止して再起動
+docker-compose down && docker-compose up -d
+```
+
+### 4. 環境変数の設定
+
+このプロジェクトは環境変数で設定を管理します。開発環境でのセットアップ手順：
+
+#### 4-1. 環境変数ファイルをコピー
+
+**最初に必ずこの手順を実行してください！**
+
+```bash
+# service/auth ディレクトリに移動
+cd service/auth
+
+# .env.example を .env にコピー
+cp .env.example .env
+```
+
+**注意**: この手順を実行しないと、必須の環境変数が設定されずにアプリケーションが起動しません。
+
+#### 4-2. 必要に応じて設定値を変更
+
+`.env`ファイルを開いて、あなたの環境に合わせて値を変更してください：
+
+```bash
+# 特に以下の項目は必ず変更してください 🔒
+JWT_SECRET_KEY=your-super-secret-key-change-this-in-production
+DB_PASSWORD=your-database-password
+MAILER_USERNAME=your-email@gmail.com
+MAILER_PASSWORD=your-app-password
+MAILER_FROM=your-email@gmail.com
+```
+
+#### 4-3. セキュリティ注意事項 ⚠️
+
+- `.env`ファイルは`.gitignore`に含まれているため、Gitにコミットされません
+- 本番環境では必ず強固な秘密鍵とパスワードを使用してください
+- メールのパスワードにはアプリパスワードを使用することをおすすめします
 
 ### 5. サーバー起動
 
@@ -121,11 +151,30 @@ go run cmd/server/main.go
 
 ## 環境変数
 
+このプロジェクトは環境変数で設定を管理します。
+
+### 必須環境変数 📋
+
+以下の環境変数は必須です（設定されていないとアプリが起動しません）：
+
+- `DB_HOST` - データベースホスト
+- `DB_USER` - データベースユーザー
+- `DB_PASSWORD` - データベースパスワード
+- `DB_NAME` - データベース名
+- `JWT_SECRET_KEY` - JWT署名用の秘密鍵
+- `MAILER_HOST` - メールサーバーホスト
+- `MAILER_PORT` - メールサーバーポート
+- `MAILER_USERNAME` - メールアカウントのユーザー名
+- `MAILER_PASSWORD` - メールアカウントのパスワード
+- `MAILER_FROM` - 送信元メールアドレス
+
+### 全環境変数一覧
+
 設定ファイルの代わりに環境変数でも設定可能：
 
 ```bash
 # Server
-export SERVER_PORT=50053
+export SERVER_PORT=8080
 
 # Database
 export DB_HOST=localhost
@@ -198,6 +247,48 @@ rpc ResendVerificationEmail(ResendVerificationEmailRequest) returns (ResendVerif
 ```bash
 go test ./...
 ```
+
+### よくあるトラブルシューティング 🔧
+
+#### データベース接続エラー
+```
+failed to connect to `user=postgres database=auth_db`: dial tcp [::1]:5432: connect: connection refused
+```
+
+**解決方法:**
+1. PostgreSQLコンテナが起動しているか確認
+   ```bash
+   cd service/auth/database
+   docker-compose ps
+   ```
+
+2. コンテナを再起動
+   ```bash
+   docker-compose restart postgres
+   ```
+
+3. ポート5432が他のプロセスで使用されていないか確認
+   ```bash
+   lsof -i :5432
+   ```
+
+#### 環境変数設定エラー
+```
+failed to process environment variables: required key [環境変数名] missing value
+```
+
+**解決方法:**
+1. `.env`ファイルが存在することを確認
+   ```bash
+   ls -la .env
+   ```
+
+2. `.env.example`から`.env`をコピー
+   ```bash
+   cp .env.example .env
+   ```
+
+3. 必須の環境変数が設定されているか確認
 
 ### データベース接続確認
 
