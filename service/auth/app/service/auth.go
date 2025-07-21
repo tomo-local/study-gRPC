@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"auth/auth"
 	"auth/db"
 	pb "auth/grpc/api"
+	"auth/jwt"
 	"auth/mailer"
 )
 
@@ -22,12 +22,12 @@ type AuthServiceInterface interface {
 type authServer struct {
 	pb.UnimplementedAuthServiceServer
 	db         db.DB
-	jwtManager *auth.JWTManager
+	jwtManager *jwt.Manager
 	mailer     *mailer.Mailer
 }
 
 // NewAuthServer creates a new auth server instance
-func NewAuthServer(database db.DB, jwtManager *auth.JWTManager, mailer *mailer.Mailer) pb.AuthServiceServer {
+func NewAuthServer(database db.DB, jwtManager *jwt.Manager, mailer *mailer.Mailer) pb.AuthServiceServer {
 	return &authServer{
 		db:         database,
 		jwtManager: jwtManager,

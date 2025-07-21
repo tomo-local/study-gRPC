@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"auth/auth"
 	"auth/db/model"
 	pb "auth/grpc/api"
 
@@ -26,12 +25,10 @@ func (s *authServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 			return status.Error(codes.Unauthenticated, "invalid email or password")
 		}
 
-		// パスワードを検証
-		if !auth.CheckPassword(req.Password, user.PasswordHash) {
-			return status.Error(codes.Unauthenticated, "invalid email or password")
-		}
-
-		// メールアドレスが認証済みかチェック
+		// パスワードの検証
+		if !checkPassword(req.Password, user.PasswordHash) {
+			return status.Error(codes.Unauthenticated, "invalid credentials")
+		} // メールアドレスが認証済みかチェック
 		if !user.EmailVerified {
 			return status.Error(codes.Unauthenticated, "email not verified")
 		}

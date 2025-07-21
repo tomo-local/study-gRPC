@@ -1,22 +1,13 @@
 package service
 
-// RequestPasswordReset はパスワードリセットの要求を処理します
-func (s *authServer) RequestPasswordReset(ctx context.Context, req *pb.RequestPasswordResetRequest) (*pb.RequestPasswordResetResponse, error) {
-	// 入力の検証
-	if err := s.validatePasswordResetRequestInput(req); err != nil {
-		return nil, err
-	}
-
-	err := s.db.StartTransaction(func(tx *gorm.DB) error {ort (
+import (
 	"context"
 	"fmt"
 	"time"
 
-	"auth/auth"
 	"auth/db/model"
 	pb "auth/grpc/api"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
@@ -38,18 +29,16 @@ func (s *authServer) RequestPasswordReset(ctx context.Context, req *pb.RequestPa
 		}
 
 		// パスワードリセットトークンを生成
-		token, err := auth.GenerateRandomToken()
+		token, err := generateRandomToken()
 		if err != nil {
 			return fmt.Errorf("failed to generate reset token: %w", err)
 		}
 
 		// パスワードリセットトークンを保存
 		resetToken := &model.PasswordResetToken{
-			ID:        uuid.New().String(),
 			UserID:    user.ID,
 			Token:     token,
 			ExpiresAt: time.Now().Add(1 * time.Hour), // 1時間有効
-			CreatedAt: time.Now(),
 		}
 
 		if err := s.db.CreatePasswordResetToken(tx, resetToken); err != nil {
@@ -72,7 +61,7 @@ func (s *authServer) RequestPasswordReset(ctx context.Context, req *pb.RequestPa
 }
 
 func (s *authServer) validatePasswordResetRequestInput(req *pb.RequestPasswordResetRequest) error {
-	if !auth.IsValidEmail(req.Email) {
+	if !isValidEmail(req.Email) {
 		return status.Error(codes.InvalidArgument, "invalid email format")
 	}
 
