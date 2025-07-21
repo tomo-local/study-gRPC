@@ -2,6 +2,8 @@ name: Auto Tag Microservice PR
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - 'service/**'
 
 jobs:
   detect-microservice:
