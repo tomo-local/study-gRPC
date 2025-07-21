@@ -21,8 +21,8 @@ import (
 )
 
 func main() {
-	// 設定を読み込み
-	cfg, err := config.LoadConfig("../config.yml")
+	// 設定を読み込み（パスは自動決定）
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
