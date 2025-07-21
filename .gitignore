@@ -7,9 +7,6 @@
 # 環境変数
 .env
 
-# Protocol Buffers 生成ファイル
-*.pb.go
-
 # Go モジュールキャッシュ
 go.sum
 go.work
