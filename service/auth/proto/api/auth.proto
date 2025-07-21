@@ -6,26 +6,17 @@ option go_package = "auth/grpc/api";
 
 // 認証サービス
 service AuthService {
-  // ユーザー登録
   rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc RegisterGoogle(RegisterGoogleRequest) returns (RegisterGoogleResponse);
 
-  // メールアドレス認証
   rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
-
-  // ログイン
-  rpc Login(LoginRequest) returns (LoginResponse);
-
-  // トークン検証
   rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
-
-  // パスワードリセット要求
   rpc RequestPasswordReset(RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
-
-  // パスワードリセット
   rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
-
-  // 認証確認メール再送
   rpc ResendVerificationEmail(ResendVerificationEmailRequest) returns (ResendVerificationEmailResponse);
+
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc LinkGoogle(LinkGoogleRequest) returns (LinkGoogleResponse);
 }
 
 // ユーザー登録リクエスト
@@ -100,6 +91,32 @@ message ResendVerificationEmailRequest {
 
 // 認証確認メール再送レスポンス
 message ResendVerificationEmailResponse {
+}
+
+// Googleアカウント登録リクエスト
+message RegisterGoogleRequest {
+  string google_id_token = 1;
+  string name = 2; // 必要に応じてGoogleプロフィールから取得した名前で上書き
+}
+
+// Googleアカウント登録レスポンス
+message RegisterGoogleResponse {
+  string user_id = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  User user = 4;
+  bool is_new_user = 5; // 新規ユーザーかどうか
+}
+
+// Googleアカウント連携リクエスト
+message LinkGoogleRequest {
+  string access_token = 1; // 既存ユーザーのアクセストークン
+  string google_id_token = 2;
+}
+
+// Googleアカウント連携レスポンス
+message LinkGoogleResponse {
+  User user = 2;
 }
 
 // ユーザー情報

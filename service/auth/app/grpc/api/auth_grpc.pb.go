@@ -20,12 +20,14 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	AuthService_Register_FullMethodName                = "/auth.AuthService/Register"
+	AuthService_RegisterGoogle_FullMethodName          = "/auth.AuthService/RegisterGoogle"
 	AuthService_VerifyEmail_FullMethodName             = "/auth.AuthService/VerifyEmail"
-	AuthService_Login_FullMethodName                   = "/auth.AuthService/Login"
 	AuthService_VerifyToken_FullMethodName             = "/auth.AuthService/VerifyToken"
 	AuthService_RequestPasswordReset_FullMethodName    = "/auth.AuthService/RequestPasswordReset"
 	AuthService_ResetPassword_FullMethodName           = "/auth.AuthService/ResetPassword"
 	AuthService_ResendVerificationEmail_FullMethodName = "/auth.AuthService/ResendVerificationEmail"
+	AuthService_Login_FullMethodName                   = "/auth.AuthService/Login"
+	AuthService_LinkGoogle_FullMethodName              = "/auth.AuthService/LinkGoogle"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -34,20 +36,15 @@ const (
 //
 // 認証サービス
 type AuthServiceClient interface {
-	// ユーザー登録
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
-	// メールアドレス認証
+	RegisterGoogle(ctx context.Context, in *RegisterGoogleRequest, opts ...grpc.CallOption) (*RegisterGoogleResponse, error)
 	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*VerifyEmailResponse, error)
-	// ログイン
-	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	// トークン検証
 	VerifyToken(ctx context.Context, in *VerifyTokenRequest, opts ...grpc.CallOption) (*VerifyTokenResponse, error)
-	// パスワードリセット要求
 	RequestPasswordReset(ctx context.Context, in *RequestPasswordResetRequest, opts ...grpc.CallOption) (*RequestPasswordResetResponse, error)
-	// パスワードリセット
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
-	// 認証確認メール再送
 	ResendVerificationEmail(ctx context.Context, in *ResendVerificationEmailRequest, opts ...grpc.CallOption) (*ResendVerificationEmailResponse, error)
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	LinkGoogle(ctx context.Context, in *LinkGoogleRequest, opts ...grpc.CallOption) (*LinkGoogleResponse, error)
 }
 
 type authServiceClient struct {
@@ -68,20 +65,20 @@ func (c *authServiceClient) Register(ctx context.Context, in *RegisterRequest, o
 	return out, nil
 }
 
-func (c *authServiceClient) VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*VerifyEmailResponse, error) {
+func (c *authServiceClient) RegisterGoogle(ctx context.Context, in *RegisterGoogleRequest, opts ...grpc.CallOption) (*RegisterGoogleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(VerifyEmailResponse)
-	err := c.cc.Invoke(ctx, AuthService_VerifyEmail_FullMethodName, in, out, cOpts...)
+	out := new(RegisterGoogleResponse)
+	err := c.cc.Invoke(ctx, AuthService_RegisterGoogle_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *authServiceClient) VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*VerifyEmailResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LoginResponse)
-	err := c.cc.Invoke(ctx, AuthService_Login_FullMethodName, in, out, cOpts...)
+	out := new(VerifyEmailResponse)
+	err := c.cc.Invoke(ctx, AuthService_VerifyEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,26 +125,41 @@ func (c *authServiceClient) ResendVerificationEmail(ctx context.Context, in *Res
 	return out, nil
 }
 
+func (c *authServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, AuthService_Login_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) LinkGoogle(ctx context.Context, in *LinkGoogleRequest, opts ...grpc.CallOption) (*LinkGoogleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LinkGoogleResponse)
+	err := c.cc.Invoke(ctx, AuthService_LinkGoogle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
 //
 // 認証サービス
 type AuthServiceServer interface {
-	// ユーザー登録
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
-	// メールアドレス認証
+	RegisterGoogle(context.Context, *RegisterGoogleRequest) (*RegisterGoogleResponse, error)
 	VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error)
-	// ログイン
-	Login(context.Context, *LoginRequest) (*LoginResponse, error)
-	// トークン検証
 	VerifyToken(context.Context, *VerifyTokenRequest) (*VerifyTokenResponse, error)
-	// パスワードリセット要求
 	RequestPasswordReset(context.Context, *RequestPasswordResetRequest) (*RequestPasswordResetResponse, error)
-	// パスワードリセット
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
-	// 認証確認メール再送
 	ResendVerificationEmail(context.Context, *ResendVerificationEmailRequest) (*ResendVerificationEmailResponse, error)
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
+	LinkGoogle(context.Context, *LinkGoogleRequest) (*LinkGoogleResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -161,11 +173,11 @@ type UnimplementedAuthServiceServer struct{}
 func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
+func (UnimplementedAuthServiceServer) RegisterGoogle(context.Context, *RegisterGoogleRequest) (*RegisterGoogleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterGoogle not implemented")
+}
 func (UnimplementedAuthServiceServer) VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyEmail not implemented")
-}
-func (UnimplementedAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
 func (UnimplementedAuthServiceServer) VerifyToken(context.Context, *VerifyTokenRequest) (*VerifyTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyToken not implemented")
@@ -178,6 +190,12 @@ func (UnimplementedAuthServiceServer) ResetPassword(context.Context, *ResetPassw
 }
 func (UnimplementedAuthServiceServer) ResendVerificationEmail(context.Context, *ResendVerificationEmailRequest) (*ResendVerificationEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResendVerificationEmail not implemented")
+}
+func (UnimplementedAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedAuthServiceServer) LinkGoogle(context.Context, *LinkGoogleRequest) (*LinkGoogleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LinkGoogle not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -218,6 +236,24 @@ func _AuthService_Register_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_RegisterGoogle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterGoogleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).RegisterGoogle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_RegisterGoogle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).RegisterGoogle(ctx, req.(*RegisterGoogleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_VerifyEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VerifyEmailRequest)
 	if err := dec(in); err != nil {
@@ -232,24 +268,6 @@ func _AuthService_VerifyEmail_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).VerifyEmail(ctx, req.(*VerifyEmailRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LoginRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).Login(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthService_Login_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).Login(ctx, req.(*LoginRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -326,6 +344,42 @@ func _AuthService_ResendVerificationEmail_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_LinkGoogle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LinkGoogleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).LinkGoogle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_LinkGoogle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).LinkGoogle(ctx, req.(*LinkGoogleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -338,12 +392,12 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_Register_Handler,
 		},
 		{
-			MethodName: "VerifyEmail",
-			Handler:    _AuthService_VerifyEmail_Handler,
+			MethodName: "RegisterGoogle",
+			Handler:    _AuthService_RegisterGoogle_Handler,
 		},
 		{
-			MethodName: "Login",
-			Handler:    _AuthService_Login_Handler,
+			MethodName: "VerifyEmail",
+			Handler:    _AuthService_VerifyEmail_Handler,
 		},
 		{
 			MethodName: "VerifyToken",
@@ -360,6 +414,14 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResendVerificationEmail",
 			Handler:    _AuthService_ResendVerificationEmail_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _AuthService_Login_Handler,
+		},
+		{
+			MethodName: "LinkGoogle",
+			Handler:    _AuthService_LinkGoogle_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
