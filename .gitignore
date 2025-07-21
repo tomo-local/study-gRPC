@@ -4,6 +4,9 @@
 *.so
 *.dylib
 
+# 環境変数
+.env
+
 # Protocol Buffers 生成ファイル
 *.pb.go
 
