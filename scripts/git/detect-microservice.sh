@@ -20,5 +20,9 @@ done
 
 # 改行区切りで出力
 for s in "${found[@]}"; do
+  # ラベルが存在しなければ自動追加（色はデフォルト: blue）
+  if ! gh label list | grep -q "^$s[[:space:]]"; then
+    gh label create "$s" --color "1e90ff" --description "$s service"
+  fi
   echo "$s"
 done
