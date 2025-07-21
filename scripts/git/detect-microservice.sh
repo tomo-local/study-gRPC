@@ -18,5 +18,7 @@ for f in $files; do
 
 done
 
-# カンマ区切りで出力
-IFS=','; echo "${found[*]}"
+# 改行区切りで出力
+for s in "${found[@]}"; do
+  echo "$s"
+done
