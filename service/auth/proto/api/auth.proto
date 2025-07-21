@@ -9,6 +9,8 @@ service AuthService {
   // ユーザー登録
   rpc Register(RegisterRequest) returns (RegisterResponse);
 
+  rpc Test(RegisterRequest) returns (RegisterResponse);
+
   // メールアドレス認証
   rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
 
