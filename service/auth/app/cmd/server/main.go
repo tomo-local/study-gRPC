@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"auth/auth"
 	config "auth/config/server"
 	"auth/db"
 	pb "auth/grpc/api"
+	"auth/jwt"
 	"auth/mailer"
 	"auth/service"
 
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// JWTマネージャーを初期化
-	jwtManager := auth.NewJWTManager(cfg.JWT.SecretKey, time.Duration(cfg.JWT.TokenDurationH)*time.Hour)
+	jwtManager := jwt.NewManager(cfg.JWT.SecretKey, time.Duration(cfg.JWT.TokenDurationH)*time.Hour)
 
 	// メール送信機能を初期化
 	mailerConfig := mailer.Config{

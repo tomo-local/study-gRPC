@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"auth/auth"
 	pb "auth/grpc/api"
 
 	"google.golang.org/grpc/codes"
@@ -44,7 +43,7 @@ func (s *authServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordReq
 		}
 
 		// 新しいパスワードをハッシュ化
-		hashedPassword, err := auth.HashPassword(req.NewPassword)
+		hashedPassword, err := hashPassword(req.NewPassword)
 		if err != nil {
 			return fmt.Errorf("failed to hash password: %w", err)
 		}
@@ -74,7 +73,7 @@ func (s *authServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordReq
 }
 
 func (s *authServer) validateResetPasswordInput(req *pb.ResetPasswordRequest) error {
-	if !auth.IsValidPassword(req.NewPassword) {
+	if !isValidPassword(req.NewPassword) {
 		return status.Error(codes.InvalidArgument, "password must be at least 8 characters long")
 	}
 

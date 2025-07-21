@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"auth/auth"
 	"auth/db/model"
 	pb "auth/grpc/api"
 
@@ -23,7 +22,7 @@ func (s *authServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 	}
 
 	// パスワードをハッシュ化
-	hashedPassword, err := auth.HashPassword(req.Password)
+	hashedPassword, err := hashPassword(req.Password)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to hash password")
 	}
@@ -37,8 +36,6 @@ func (s *authServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 			Name:          req.Name,
 			PasswordHash:  hashedPassword,
 			EmailVerified: false,
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
 		}
 
 		if err := s.db.CreateUser(tx, user); err != nil {
@@ -46,18 +43,16 @@ func (s *authServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 		}
 
 		// メール認証トークンを生成
-		token, err := auth.GenerateRandomToken()
+		token, err := generateRandomToken()
 		if err != nil {
 			return fmt.Errorf("failed to generate verification token: %w", err)
 		}
 
 		// メール認証トークンを保存
 		emailToken := &model.EmailVerificationToken{
-			ID:        uuid.New().String(),
 			UserID:    user.ID,
 			Token:     token,
 			ExpiresAt: time.Now().Add(24 * time.Hour), // 24時間有効
-			CreatedAt: time.Now(),
 		}
 
 		if err := s.db.CreateEmailVerificationToken(tx, emailToken); err != nil {
@@ -82,11 +77,11 @@ func (s *authServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 }
 
 func (s *authServer) validateRegistrationInput(req *pb.RegisterRequest) error {
-	if !auth.IsValidEmail(req.Email) {
+	if !isValidEmail(req.Email) {
 		return status.Error(codes.InvalidArgument, "invalid email format")
 	}
 
-	if !auth.IsValidPassword(req.Password) {
+	if !isValidPassword(req.Password) {
 		return status.Error(codes.InvalidArgument, "password must be at least 8 characters long")
 	}
 
@@ -94,8 +89,11 @@ func (s *authServer) validateRegistrationInput(req *pb.RegisterRequest) error {
 		return status.Error(codes.InvalidArgument, "name is required")
 	}
 
-	if _, err := s.db.GetUserByEmail(nil, req.Email); err == nil {
-		return status.Error(codes.AlreadyExists, "user already exists with email: "+req.Email)
+	if user, err := s.db.GetUserByEmail(nil, req.Email); err != nil {
+		// ユーザーが存在しない場合はnilを返す
+		return status.Error(codes.Internal, "failed to check existing user")
+	} else if user != nil {
+		return status.Error(codes.AlreadyExists, "user with this email already exists")
 	}
 
 	return nil

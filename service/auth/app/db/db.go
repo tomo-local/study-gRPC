@@ -107,11 +107,6 @@ func migrateDB(db *gorm.DB) error {
 	return nil
 }
 
-// StartTransaction はトランザクションを開始し、指定された関数を実行します。
-func (d *db) StartTransaction(fn func(tx *gorm.DB) error) error {
-	return d.client.Transaction(fn)
-}
-
 // Close は終了時にデータベース接続を閉じます。
 func (d *db) Close() error {
 	sqlDB, err := d.client.DB()
