@@ -1,0 +1,51 @@
+# Git関連
+.git
+.gitignore
+.gitattributes
+
+# ドキュメント
+*.md
+README*
+
+# IDE設定
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS関連
+.DS_Store
+Thumbs.db
+
+# ログファイル
+*.log
+
+# テストファイル（ローカル実行用）
+*_test.go
+
+# 環境設定（サンプルファイル）
+.env.example
+.env.local
+.env.dev
+
+# データベース関連
+database/
+*.sql
+
+# 一時ファイル
+tmp/
+temp/
+*.tmp
+
+# バイナリファイル
+auth-server
+*.exe
+
+# proto関連（すでにビルド済みの想定）
+proto/
+
+# Docker関連（入れ子を避けるため）
+docker/
+Dockerfile*
+docker-compose*.yml
+.dockerignore

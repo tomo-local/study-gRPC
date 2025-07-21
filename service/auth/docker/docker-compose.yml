@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # PostgreSQLデータベース
+  auth_postgres:
+    image: postgres:15-alpine
+    container_name: auth_postgres
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - auth_network
+
+  # Authサービス（gRPCサーバー）
+  auth_service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: auth_service
+    environment:
+      # データベース設定
+      DB_HOST: auth_postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: auth_db
+      DB_SSL_MODE: disable
+
+      # サーバー設定
+      SERVER_PORT: 50053
+
+      # JWT設定
+      JWT_SECRET_KEY: docker-dev-secret-key-change-in-production
+      JWT_TOKEN_DURATION_HOURS: 24
+
+      # メール設定（必要に応じて変更）
+      MAILER_HOST: smtp.gmail.com
+      MAILER_PORT: 587
+      MAILER_USERNAME: your-email@gmail.com
+      MAILER_PASSWORD: your-app-password
+      MAILER_FROM: your-email@gmail.com
+    ports:
+      - "50053:50053"
+    depends_on:
+      auth_postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "50053"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - auth_network
+
+networks:
+  auth_network:
+    driver: bridge
+    name: auth_network
