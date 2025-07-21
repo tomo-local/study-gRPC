@@ -17,45 +17,19 @@ import (
 
 // Register はユーザー登録を行います
 func (s *authServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	// 入力バリデーション
-	if !auth.IsValidEmail(req.Email) {
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: "invalid email format",
-		}, status.Error(codes.InvalidArgument, "invalid email format")
-	}
-
-	if !auth.IsValidPassword(req.Password) {
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: "password must be at least 8 characters long",
-		}, status.Error(codes.InvalidArgument, "password must be at least 8 characters long")
-	}
-
-	if req.Name == "" {
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: "name is required",
-		}, status.Error(codes.InvalidArgument, "name is required")
+	// 入力の検証
+	if err := s.validateRegistrationInput(req); err != nil {
+		return nil, err
 	}
 
 	// パスワードをハッシュ化
 	hashedPassword, err := auth.HashPassword(req.Password)
 	if err != nil {
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: "failed to hash password",
-		}, status.Error(codes.Internal, "failed to hash password")
+		return nil, status.Error(codes.Internal, "failed to hash password")
 	}
 
 	var user *model.User
 	err = s.db.StartTransaction(func(tx *gorm.DB) error {
-		// ユーザーが既に存在するかチェック
-		_, err := s.db.GetUserByEmail(tx, req.Email)
-		if err == nil {
-			return fmt.Errorf("user already exists with email: %s", req.Email)
-		}
-
 		// 新しいユーザーを作成
 		user = &model.User{
 			ID:            uuid.New().String(),
@@ -99,15 +73,30 @@ func (s *authServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 	})
 
 	if err != nil {
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: err.Error(),
-		}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.RegisterResponse{
-		Success: true,
-		Message: "User registered successfully. Please check your email to verify your account.",
-		UserId:  user.ID,
+		UserId: user.ID,
 	}, nil
+}
+
+func (s *authServer) validateRegistrationInput(req *pb.RegisterRequest) error {
+	if !auth.IsValidEmail(req.Email) {
+		return status.Error(codes.InvalidArgument, "invalid email format")
+	}
+
+	if !auth.IsValidPassword(req.Password) {
+		return status.Error(codes.InvalidArgument, "password must be at least 8 characters long")
+	}
+
+	if req.Name == "" {
+		return status.Error(codes.InvalidArgument, "name is required")
+	}
+
+	if _, err := s.db.GetUserByEmail(nil, req.Email); err == nil {
+		return status.Error(codes.AlreadyExists, "user already exists with email: "+req.Email)
+	}
+
+	return nil
 }

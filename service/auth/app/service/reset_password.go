@@ -15,12 +15,9 @@ import (
 
 // ResetPassword はパスワードのリセットを行います
 func (s *authServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
-	// パスワードの形式チェック
-	if !auth.IsValidPassword(req.NewPassword) {
-		return &pb.ResetPasswordResponse{
-			Success: false,
-			Message: "password must be at least 8 characters long",
-		}, status.Error(codes.InvalidArgument, "password must be at least 8 characters long")
+	// 入力の検証
+	if err := s.validateResetPasswordInput(req); err != nil {
+		return nil, err
 	}
 
 	err := s.db.StartTransaction(func(tx *gorm.DB) error {
@@ -70,14 +67,16 @@ func (s *authServer) ResetPassword(ctx context.Context, req *pb.ResetPasswordReq
 	})
 
 	if err != nil {
-		return &pb.ResetPasswordResponse{
-			Success: false,
-			Message: err.Error(),
-		}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.ResetPasswordResponse{
-		Success: true,
-		Message: "Password reset successfully.",
-	}, nil
+	return &pb.ResetPasswordResponse{}, nil
+}
+
+func (s *authServer) validateResetPasswordInput(req *pb.ResetPasswordRequest) error {
+	if !auth.IsValidPassword(req.NewPassword) {
+		return status.Error(codes.InvalidArgument, "password must be at least 8 characters long")
+	}
+
+	return nil
 }

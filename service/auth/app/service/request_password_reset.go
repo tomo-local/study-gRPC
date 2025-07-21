@@ -1,6 +1,13 @@
 package service
 
-import (
+// RequestPasswordReset はパスワードリセットの要求を処理します
+func (s *authServer) RequestPasswordReset(ctx context.Context, req *pb.RequestPasswordResetRequest) (*pb.RequestPasswordResetResponse, error) {
+	// 入力の検証
+	if err := s.validatePasswordResetRequestInput(req); err != nil {
+		return nil, err
+	}
+
+	err := s.db.StartTransaction(func(tx *gorm.DB) error {ort (
 	"context"
 	"fmt"
 	"time"
@@ -17,6 +24,11 @@ import (
 
 // RequestPasswordReset はパスワードリセットの要求を処理します
 func (s *authServer) RequestPasswordReset(ctx context.Context, req *pb.RequestPasswordResetRequest) (*pb.RequestPasswordResetResponse, error) {
+	// 入力の検証
+	if err := s.validatePasswordResetRequestInput(req); err != nil {
+		return nil, err
+	}
+
 	err := s.db.StartTransaction(func(tx *gorm.DB) error {
 		// ユーザーを取得
 		user, err := s.db.GetUserByEmail(tx, req.Email)
@@ -53,14 +65,16 @@ func (s *authServer) RequestPasswordReset(ctx context.Context, req *pb.RequestPa
 	})
 
 	if err != nil {
-		return &pb.RequestPasswordResetResponse{
-			Success: false,
-			Message: err.Error(),
-		}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.RequestPasswordResetResponse{
-		Success: true,
-		Message: "Password reset email sent successfully.",
-	}, nil
+	return &pb.RequestPasswordResetResponse{}, nil
+}
+
+func (s *authServer) validatePasswordResetRequestInput(req *pb.RequestPasswordResetRequest) error {
+	if !auth.IsValidEmail(req.Email) {
+		return status.Error(codes.InvalidArgument, "invalid email format")
+	}
+
+	return nil
 }

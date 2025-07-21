@@ -54,14 +54,8 @@ func (s *authServer) VerifyEmail(ctx context.Context, req *pb.VerifyEmailRequest
 	})
 
 	if err != nil {
-		return &pb.VerifyEmailResponse{
-			Success: false,
-			Message: err.Error(),
-		}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.VerifyEmailResponse{
-		Success: true,
-		Message: "Email verified successfully.",
-	}, nil
+	return &pb.VerifyEmailResponse{}, nil
 }
