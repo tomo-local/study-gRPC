@@ -18,7 +18,9 @@ for f in $files; do
 
 done
 
-# GitHub Actions用にラベルをスペース区切りで出力（空の場合は何も出力しない）
+# GitHub Actions用にラベルをカンマ区切りで出力（空の場合は何も出力しない）
 if [ ${#found[@]} -gt 0 ]; then
-  echo "${found[@]}"
+  for s in \"${found[@]}\"; do
+    echo \"$s\"
+  done
 fi
