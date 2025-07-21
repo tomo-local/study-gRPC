@@ -28,6 +28,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: auth_service
+    env_file:
+      - .env
     environment:
       # データベース設定
       DB_HOST: auth_postgres
@@ -44,12 +46,12 @@ services:
       JWT_SECRET_KEY: docker-dev-secret-key-change-in-production
       JWT_TOKEN_DURATION_HOURS: 24
 
-      # メール設定（必要に応じて変更）
+      # メール設定（実際の値に変更してください）
       MAILER_HOST: smtp.gmail.com
       MAILER_PORT: 587
-      MAILER_USERNAME: your-email@gmail.com
-      MAILER_PASSWORD: your-app-password
-      MAILER_FROM: your-email@gmail.com
+      MAILER_USERNAME: ${GMAIL_USERNAME}  # 環境変数から読み込み
+      MAILER_PASSWORD: ${GMAIL_APP_PASSWORD}  # 環境変数から読み込み
+      MAILER_FROM: ${GMAIL_FROM}  # 環境変数から読み込み
     ports:
       - "8080:8080"
     depends_on:
