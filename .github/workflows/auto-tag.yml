@@ -18,21 +18,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           files=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
-          service=""
-          services=(auth greeting memo note)
-          for f in $files; do
-            for s in "${services[@]}"; do
-              if [[ $f == service/$s/* ]]; then
-                service="$s"
-                break 2
-              fi
-            done
-          done
-          echo "service=$service" >> $GITHUB_OUTPUT
+          services=$(bash scripts/git/detect-microservice.sh "$files")
+          echo "services=$services" >> $GITHUB_OUTPUT
 
       - name: Add label to PR
-        if: steps.detect.outputs.service != ''
+        if: steps.detect.outputs.services != ''
         uses: actions-ecosystem/action-add-labels@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          labels: ${{ steps.detect.outputs.service }}
+          labels: ${{ steps.detect.outputs.services }}
