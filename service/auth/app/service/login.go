@@ -52,15 +52,10 @@ func (s *authServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 	})
 
 	if err != nil {
-		return &pb.LoginResponse{
-			Success: false,
-			Message: err.Error(),
-		}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.LoginResponse{
-		Success:      true,
-		Message:      "Login successful.",
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User:         convertUserToProto(user),

@@ -13,13 +13,10 @@ import (
 func (s *authServer) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.VerifyTokenResponse, error) {
 	claims, err := s.jwtManager.VerifyToken(req.Token)
 	if err != nil {
-		return &pb.VerifyTokenResponse{
-			Valid: false,
-		}, status.Error(codes.Unauthenticated, err.Error())
+		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	return &pb.VerifyTokenResponse{
-		Valid:  true,
 		UserId: claims.UserID,
 		Email:  claims.Email,
 		Name:   claims.Name,

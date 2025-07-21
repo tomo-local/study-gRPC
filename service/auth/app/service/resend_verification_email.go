@@ -17,6 +17,11 @@ import (
 
 // ResendVerificationEmail は認証メールを再送信します
 func (s *authServer) ResendVerificationEmail(ctx context.Context, req *pb.ResendVerificationEmailRequest) (*pb.ResendVerificationEmailResponse, error) {
+	// 入力の検証
+	if err := s.validateResendVerificationEmailInput(req); err != nil {
+		return nil, err
+	}
+
 	err := s.db.StartTransaction(func(tx *gorm.DB) error {
 		// ユーザーを取得
 		user, err := s.db.GetUserByEmail(tx, req.Email)
@@ -57,14 +62,16 @@ func (s *authServer) ResendVerificationEmail(ctx context.Context, req *pb.Resend
 	})
 
 	if err != nil {
-		return &pb.ResendVerificationEmailResponse{
-			Success: false,
-			Message: err.Error(),
-		}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.ResendVerificationEmailResponse{
-		Success: true,
-		Message: "Verification email sent successfully.",
-	}, nil
+	return &pb.ResendVerificationEmailResponse{}, nil
+}
+
+func (s *authServer) validateResendVerificationEmailInput(req *pb.ResendVerificationEmailRequest) error {
+	if !auth.IsValidEmail(req.Email) {
+		return status.Error(codes.InvalidArgument, "invalid email format")
+	}
+
+	return nil
 }
