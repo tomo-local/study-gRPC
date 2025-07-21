@@ -18,7 +18,7 @@ for f in $files; do
 
 done
 
-# 改行区切りで出力
-for s in "${found[@]}"; do
-  echo "$s"
-done
+# GitHub Actions用にラベル形式で出力（空の場合は何も出力しない）
+if [ ${#found[@]} -gt 0 ]; then
+  IFS=','; echo "${found[*]}"
+fi
