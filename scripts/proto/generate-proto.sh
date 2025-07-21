@@ -16,23 +16,23 @@ echo "Generating proto files for services: $@"
 # 指定されたサービスのみ処理
 for service in "$@"; do
   echo "Processing service: $service"
-  
+
   # サービスディレクトリの存在チェック
   if [ ! -d "service/$service" ]; then
     echo "Warning: Service directory 'service/$service' not found, skipping..."
     continue
   fi
-  
+
   # 該当サービスのprotoファイルを検索
   find "service/$service/proto" -name "*.proto" 2>/dev/null | while read proto; do
     if [ -f "$proto" ]; then
       echo "  Processing: $proto"
       dir=$(dirname "$proto")
-      
+
       # 出力ディレクトリを設定（service/{service}/app/grpc）
       outdir="service/$service/app/grpc"
       mkdir -p "$outdir"
-      
+
       # proto生成
       protoc \
         --proto_path="service/$service/proto" \
@@ -41,7 +41,7 @@ for service in "$@"; do
         --go-grpc_out="$outdir" \
         --go-grpc_opt=paths=source_relative \
         "$proto"
-      
+
       echo "  Generated: $outdir"
     fi
   done || echo "  No proto files found for service: $service"

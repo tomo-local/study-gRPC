@@ -135,10 +135,10 @@ jobs:
         id: check-changes
         run: |
           echo "🔍 Checking for generated proto file changes..."
-          
+
           # proto生成で作られる.pb.goファイルのみをチェック
           proto_changes=$(git status --porcelain | grep -E '\.(pb\.go|_grpc\.pb\.go)$' || echo "")
-          
+
           if [ -n "$proto_changes" ]; then
             echo "📝 Changes detected in generated proto files:"
             echo "$proto_changes" | sed 's/^/   /'
