@@ -18,7 +18,7 @@ for f in $files; do
 
 done
 
-# GitHub Actions用にラベル形式で出力（空の場合は何も出力しない）
+# GitHub Actions用にラベルをスペース区切りで出力（空の場合は何も出力しない）
 if [ ${#found[@]} -gt 0 ]; then
-  IFS=','; echo "${found[*]}"
+  echo "${found[@]}"
 fi
