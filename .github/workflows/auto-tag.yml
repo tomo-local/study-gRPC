@@ -1,0 +1,38 @@
+name: Auto Tag Microservice PR
+on:
+  pull_request:
+    paths:
+      - 'service/**'
+    types: [opened, synchronize, reopened]
+
+jobs:
+  detect-microservice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Detect microservice
+        id: detect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          files=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
+          service=""
+          services=(auth greeting memo note)
+          for f in $files; do
+            for s in "${services[@]}"; do
+              if [[ $f == service/$s/* ]]; then
+                service="$s"
+                break 2
+              fi
+            done
+          done
+          echo "service=$service" >> $GITHUB_OUTPUT
+
+      - name: Add label to PR
+        if: steps.detect.outputs.service != ''
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: ${{ steps.detect.outputs.service }}

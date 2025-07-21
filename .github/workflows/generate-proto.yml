@@ -1,0 +1,34 @@
+name: Generate Go proto files
+
+on:
+  push:
+    paths:
+      - '**/proto/**/*.proto'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Install protoc-gen-go
+        run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+      - name: Generate pb.go files (Docker)
+        run: |
+          docker build -t proto-gen -f scripts/proto/Dockerfile .
+          docker run --rm -v ${{ github.workspace }}:/workspace proto-gen bash /workspace/scripts/generate-proto.sh
+
+      - name: Commit and push changes
+        run: scripts/git-auto-commit.sh "github-actions[bot]" "github-actions[bot]@users.noreply.github.com"
