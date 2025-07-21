@@ -34,6 +34,10 @@ func New(config Config) *Mailer {
 	}
 }
 
+// TODO: メール送信のサービスのrefactoringをする
+// urlの生成を外部に委譲するなど、テスト可能な形にする
+// bodyはhelper関数
+
 // SendVerificationEmail はメールアドレス認証用のメールを送信します
 func (m *Mailer) SendVerificationEmail(to, name, token string) error {
 	subject := "メールアドレス認証のお願い"
