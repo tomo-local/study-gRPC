@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: email_postgres
+    environment:
+      POSTGRES_USER: email_user
+      POSTGRES_PASSWORD: email_pass
+      POSTGRES_DB: email_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - email_postgres_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - email_network
+
+  adminer:
+    image: adminer
+    container_name: email_adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - email_network
+    depends_on:
+      - postgres
+
+volumes:
+  email_postgres_data:
+
+networks:
+  email_network:
+    driver: bridge
