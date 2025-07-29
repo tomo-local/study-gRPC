@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  email-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: email_server
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=email_user
+      - DB_PASSWORD=email_pass
+      - DB_NAME=email_db
+      - DB_SSLMODE=disable
+      - SMTP_HOST=0.0.0.0
+      - SMTP_PORT=2525
+      - SMTP_TLS=false
+      - SMTP_AUTH_REQUIRED=true
+      - JWT_SECRET=your-jwt-secret-key-here
+      - APP_ENV=development
+    ports:
+      - "2525:2525"
+    depends_on:
+      - postgres
+    networks:
+      - email_network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: email_postgres
+    environment:
+      POSTGRES_USER: email_user
+      POSTGRES_PASSWORD: email_pass
+      POSTGRES_DB: email_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - email_postgres_data:/var/lib/postgresql/data
+      - ../database/init:/docker-entrypoint-initdb.d
+    networks:
+      - email_network
+    restart: unless-stopped
+
+  adminer:
+    image: adminer
+    container_name: email_adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - email_network
+    depends_on:
+      - postgres
+
+volumes:
+  email_postgres_data:
+
+networks:
+  email_network:
+    driver: bridge
